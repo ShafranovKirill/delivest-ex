@@ -7,6 +7,13 @@ const parseLayout = (el) => {
 const widthColumns = (width, editing) =>
   width < 640 ? 2 : width < (editing && window.innerWidth >= 1280 ? 680 : 1100) ? 6 : 12;
 const kpiWidgetIds = new Set(["revenue", "orders", "avg_check", "in_work"]);
+const compactTextWidgetIds = new Set(["top_products", "branch_summary"]);
+const compactBaseHeight = (item, el, editing) => {
+  if (editing) return null;
+  if (compactTextWidgetIds.has(item.id)) return 2;
+  if (el.dataset.dashboardEmpty !== "true") return null;
+  return ["hourly", "latest_orders"].includes(item.id) ? 2 : null;
+};
 // Interactive changes use free cells only. Layout loading and content sizing
 // still use GridStack's normal collision handling.
 class DashboardGridEngine extends GridStackEngine {
@@ -21,11 +28,11 @@ class DashboardGridEngine extends GridStackEngine {
   }
 }
 
-const mobileHeight = (item, editing, el, extraNarrow, width) => {
+const mobileHeight = (item, editing, el, width) => {
   if (item.id === "attention") return editing ? 3 : 2;
   if (item.id === "quick_actions") {
     const actions = el.querySelectorAll(".dashboard-action-link").length;
-    return editing || extraNarrow || actions > 4 ? 3 : 2;
+    return editing || actions > 4 ? 3 : 2;
   }
   if (kpiWidgetIds.has(item.id)) {
     return editing || width < 400 ? 3 : 2;
@@ -53,7 +60,7 @@ export const DashboardGrid = {
         minW: Number(el.getAttribute("gs-min-w")), maxW: Number(el.getAttribute("gs-max-w")),
       }]));
     this.columns = widthColumns(this.container.clientWidth, this.editing);
-    this.extraNarrow = this.container.clientWidth < 340;
+    this.narrowKpi = this.container.clientWidth < 400;
     this.grid = GridStack.init({
       column: 12,
       engineClass: DashboardGridEngine,
@@ -172,11 +179,13 @@ export const DashboardGrid = {
     for (const { item, el } of this.orderedVisible()) {
       const isKpi = kpiWidgetIds.has(item.id);
       const w = isKpi ? 3 : 6;
-      const h = item.id === "quick_actions" && el.querySelectorAll(".dashboard-action-link").length > 4
-        ? Math.max(3, item.h) : item.h;
+      const compactHeight = compactBaseHeight(item, el, this.editing);
+      const h = compactHeight ?? (item.id === "quick_actions" && el.querySelectorAll(".dashboard-action-link").length > 4
+        ? Math.max(3, item.h) : item.h);
+      const minH = compactHeight ?? this.minimumHeights.get(item.id);
       if (isKpi) {
         const x = halfRowHeight ? 3 : 0;
-        this.grid.update(el, { x, y, w, h });
+        this.grid.update(el, { x, y, w, h, minH });
         if (halfRowHeight) {
           y += Math.max(halfRowHeight, h);
           halfRowHeight = 0;
@@ -186,7 +195,7 @@ export const DashboardGrid = {
       } else {
         if (halfRowHeight) y += halfRowHeight;
         halfRowHeight = 0;
-        this.grid.update(el, { x: 0, y, w, h });
+        this.grid.update(el, { x: 0, y, w, h, minH });
         y += h;
       }
     }
@@ -198,10 +207,12 @@ export const DashboardGrid = {
     let halfRowHeight = 0;
     this.grid.batchUpdate();
     for (const { item, el } of this.orderedVisible()) {
-      const h = mobileHeight(item, this.editing, el, this.extraNarrow, this.container.clientWidth);
+      const compactHeight = compactBaseHeight(item, el, this.editing);
+      const h = compactHeight ?? mobileHeight(item, this.editing, el, this.container.clientWidth);
+      const minH = compactHeight ?? this.minimumHeights.get(item.id);
       const isKpi = kpiWidgetIds.has(item.id);
       if (isKpi) {
-        this.grid.update(el, { x: halfRowHeight ? 1 : 0, y, w: 1, h, minW: 1, maxW: 2 });
+        this.grid.update(el, { x: halfRowHeight ? 1 : 0, y, w: 1, h, minH, minW: 1, maxW: 2 });
         if (halfRowHeight) {
           y += Math.max(halfRowHeight, h);
           halfRowHeight = 0;
@@ -209,7 +220,7 @@ export const DashboardGrid = {
       } else {
         if (halfRowHeight) y += halfRowHeight;
         halfRowHeight = 0;
-        this.grid.update(el, { x: 0, y, w: 2, h, minW: 2, maxW: 2 });
+        this.grid.update(el, { x: 0, y, w: 2, h, minH, minW: 2, maxW: 2 });
         y += h;
       }
     }
@@ -246,11 +257,11 @@ export const DashboardGrid = {
   resize(force = false) {
     const width = this.container.clientWidth;
     const columns = widthColumns(width, this.editing);
-    const extraNarrow = width < 340;
-    if (!force && columns === this.columns && this.grid.opts.column === columns && extraNarrow === this.extraNarrow) return;
+    const narrowKpi = width < 400;
+    if (!force && columns === this.columns && this.grid.opts.column === columns && narrowKpi === this.narrowKpi) return;
     this.lastWidth = width;
     this.columns = columns;
-    this.extraNarrow = extraNarrow;
+    this.narrowKpi = narrowKpi;
     this.container.classList.toggle("dashboard-grid-compact", columns < 12);
     this.container.classList.toggle("dashboard-grid-mobile", columns === 2);
     for (const item of this.canonical) {
@@ -326,7 +337,7 @@ export const DashboardGrid = {
       card.style.height = "max-content";
       const contentTop = content.getBoundingClientRect().top;
       const expandedBottom = [...card.querySelectorAll("details[open]")]
-        .reduce((bottom, details) => Math.max(bottom, details.getBoundingClientRect().bottom), 0);
+        .reduce((bottom, details) => Math.max(bottom, details.getBoundingClientRect().bottom), contentTop);
       const intrinsic = Math.max(content.scrollHeight, expandedBottom - contentTop + 24);
       const needed = Math.ceil((intrinsic + 12) / cell);
       content.style.height = oldContentHeight;
