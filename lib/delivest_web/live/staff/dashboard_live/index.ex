@@ -278,14 +278,14 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
           id="dashboard-edit"
           type="button"
           phx-click="dashboard_edit"
-          class="btn btn-sm btn-outline"
+          class="staff-page-primary-action btn btn-sm btn-outline"
         ><.icon name="hero-pencil-square" class="size-4" />{gettext("Customize")}</button>
         <button
           :if={@editing_dashboard}
           id="dashboard-save"
           type="button"
           phx-click="dashboard_save"
-          class="btn btn-sm btn-primary"
+          class="staff-page-primary-action btn btn-sm btn-primary"
         >{gettext("Save layout")}</button>
         <button
           :if={@editing_dashboard}

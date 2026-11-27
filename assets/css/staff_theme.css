@@ -32,23 +32,44 @@
   background-color: var(--staff-panel-surface);
 }
 
-[data-theme="dark"] .foundation-shell .btn-primary:not(.btn-outline):not(:disabled):not(.btn-disabled) {
+[data-theme="dark"] .foundation-shell .btn-primary:not(.btn-outline, .btn-error, .btn-info, .btn-success, .btn-warning, :disabled, .btn-disabled) {
+  background-color: var(--color-base-200);
+  border-color: var(--color-base-300);
+  color: var(--color-base-content);
+  box-shadow: none;
+}
+
+[data-theme="dark"] .foundation-shell .btn-primary:not(.btn-outline, .btn-error, .btn-info, .btn-success, .btn-warning, :disabled, .btn-disabled, [aria-disabled="true"]):hover {
+  background-color: color-mix(in srgb, var(--color-base-200) 75%, var(--color-base-content) 25%);
+}
+
+.foundation-shell .btn-outline:where(:not(:disabled, .btn-disabled, .btn-error, .btn-info, .btn-success, .btn-warning)) {
+  background-color: var(--staff-panel-surface);
+  border: 1px solid var(--color-base-300);
+  box-shadow: none;
+}
+
+.foundation-shell .btn-outline:where(:not(:disabled, .btn-disabled, .btn-error, .btn-info, .btn-success, .btn-warning, [aria-disabled="true"])):hover {
+  background-color: var(--color-base-200);
+}
+
+[data-theme="dark"] .foundation-shell :is(.staff-page-primary-action, .staff-page-header-actions > :nth-child(1 of .btn-primary), .staff-page-toolbar-actions > :nth-child(1 of .btn-primary)):not(.btn-error, .btn-info, .btn-success, .btn-warning, :disabled, .btn-disabled, [aria-disabled="true"]) {
   background-color: #fff;
   border-color: transparent;
   color: #000;
   box-shadow: none;
 }
 
-[data-theme="dark"] .foundation-shell .btn-primary:not(.btn-outline):not(:disabled):not(.btn-disabled):hover {
+[data-theme="dark"] .foundation-shell :is(.staff-page-primary-action, .staff-page-header-actions > :nth-child(1 of .btn-primary), .staff-page-toolbar-actions > :nth-child(1 of .btn-primary)):not(.btn-error, .btn-info, .btn-success, .btn-warning, :disabled, .btn-disabled, [aria-disabled="true"]):hover {
   background-color: oklch(.929 .013 255.508);
 }
 
-.foundation-shell .btn-outline:not(:disabled):not(.btn-disabled):not(.btn-error):not(.btn-info):not(.btn-success):not(.btn-warning) {
-  background-color: var(--staff-panel-surface);
-  border: 1px solid var(--color-base-300);
-  box-shadow: none;
+[data-theme="dark"] .foundation-shell :is(.staff-page-primary-action, .staff-page-header-actions > :nth-child(1 of .btn-primary), .staff-page-toolbar-actions > :nth-child(1 of .btn-primary)):focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
-.foundation-shell .btn-outline:not(:disabled):not(.btn-disabled):not(.btn-error):not(.btn-info):not(.btn-success):not(.btn-warning):hover {
-  background-color: var(--color-base-200);
+[data-theme="dark"] .foundation-shell :is(.btn-primary, .staff-page-primary-action)[aria-disabled="true"] {
+  opacity: .5;
+  cursor: not-allowed;
 }

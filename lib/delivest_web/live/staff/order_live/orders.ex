@@ -611,7 +611,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
         </button>
         <.link
           navigate={~p"/staff/b/#{@current_branch}/orders/new?#{@query}"}
-          class="orders-new-order btn btn-sm btn-primary"
+          class="orders-new-order staff-page-primary-action btn btn-sm btn-primary"
           aria-label={gettext("New Order")}
         >
           <.icon name="hero-plus" class="size-4" />

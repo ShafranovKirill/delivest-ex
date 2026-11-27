@@ -1215,7 +1215,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
           id="statistics-compare"
           type="button"
           phx-click="open_comparison"
-          class="btn btn-sm btn-outline"
+          class="staff-page-primary-action btn btn-sm btn-outline"
         >{gettext("Compare periods")}</button>
       </div>
     </div>
