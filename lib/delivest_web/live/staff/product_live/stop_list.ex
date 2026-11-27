@@ -250,7 +250,7 @@ defmodule DelivestWeb.Staff.ProductLive.StopList do
             <select
               name="category_id"
               aria-label={gettext("Category")}
-              class="select select-bordered select-sm w-40"
+              class="select select-bordered select-sm w-full sm:w-40"
             >
               <option value="">{gettext("All categories")}</option>
               <option
@@ -303,7 +303,9 @@ defmodule DelivestWeb.Staff.ProductLive.StopList do
             else: gettext("No products")
         }
       />
-      <.pagination meta={@meta} path_fn={path_fn} page_sizes={[25, 50, 100]} />
+      <div class="flex justify-end">
+        <.pagination meta={@meta} path_fn={path_fn} page_sizes={[25, 50, 100]} />
+      </div>
       <.live_component
         :if={@picker_open}
         module={DelivestWeb.Staff.ProductLive.ProductPicker}

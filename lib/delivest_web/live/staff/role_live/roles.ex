@@ -213,64 +213,49 @@ defmodule DelivestWeb.Staff.RoleLive.Roles do
         </div>
       <% else %>
         <.empty_state :if={@roles == []} title={gettext("No roles")} />
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <%= for role <- @roles do %>
-            <div
-              id={"role-card-#{role.id}"}
-              class="card scroll-mt-24 bg-base-100 shadow-xl hover:shadow-2xl transition-all"
-            >
-              <div class="card-body flex flex-row items-center justify-between gap-4">
-                <.link
-                  :if={
-                    Identity.can?(@current_staff, "roles.update") and
-                      Identity.manages_role?(@current_staff, role)
-                  }
-                  navigate={~p"/staff/roles/#{role.id}/edit"}
-                  class="cursor-pointer flex-1"
-                >
-                  <h2 class="card-title">{role.name}</h2>
-                </.link>
-                <h2
-                  :if={
-                    not (Identity.can?(@current_staff, "roles.update") and
-                           Identity.manages_role?(@current_staff, role))
-                  }
-                  class="card-title flex-1"
-                >
-                  {role.name}
-                </h2>
-
-                <div class="flex flex-col items-center gap-1 shrink-0">
-                  <.link
-                    :if={
-                      Identity.can?(@current_staff, "roles.update") and
-                        Identity.manages_role?(@current_staff, role)
-                    }
-                    navigate={~p"/staff/roles/#{role.id}/edit"}
-                    class="btn btn-sm btn-ghost btn-square text-info"
-                    title={gettext("Edit")}
-                  >
-                    <.icon name="hero-pencil-square" class="w-5 h-5" />
-                  </.link>
-
-                  <button
-                    :if={
-                      Identity.can?(@current_staff, "roles.delete") and
-                        Identity.manages_role?(@current_staff, role)
-                    }
-                    type="button"
-                    phx-click="delete_click"
-                    phx-value-id={role.id}
-                    class="btn btn-sm btn-ghost btn-square text-error"
-                    title={gettext("Delete")}
-                  >
-                    <.icon name="hero-trash" class="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          <% end %>
-        </div>
+        <.table id="roles" rows={@roles} row_id={fn role -> "role-card-#{role.id}" end}>
+          <:col :let={role} label={gettext("Role")}>
+            <.link
+              :if={
+                Identity.can?(@current_staff, "roles.update") and
+                  Identity.manages_role?(@current_staff, role)
+              }
+              navigate={~p"/staff/roles/#{role.id}/edit"}
+              class="font-semibold hover:text-primary"
+            >{role.name}</.link>
+            <span
+              :if={
+                not (Identity.can?(@current_staff, "roles.update") and
+                       Identity.manages_role?(@current_staff, role))
+              }
+              class="font-semibold"
+            >{role.name}</span>
+          </:col>
+          <:action :let={role}>
+            <.link
+              :if={
+                Identity.can?(@current_staff, "roles.update") and
+                  Identity.manages_role?(@current_staff, role)
+              }
+              navigate={~p"/staff/roles/#{role.id}/edit"}
+              class="btn btn-ghost btn-sm btn-square"
+              title={gettext("Edit")}
+              aria-label={gettext("Edit")}
+            ><.icon name="hero-pencil-square" class="size-4" /></.link>
+            <button
+              :if={
+                Identity.can?(@current_staff, "roles.delete") and
+                  Identity.manages_role?(@current_staff, role)
+              }
+              type="button"
+              phx-click="delete_click"
+              phx-value-id={role.id}
+              class="btn btn-ghost btn-sm btn-square text-error"
+              title={gettext("Delete")}
+              aria-label={gettext("Delete")}
+            ><.icon name="hero-trash" class="size-4" /></button>
+          </:action>
+        </.table>
 
         <.modal
           id="delete-modal"

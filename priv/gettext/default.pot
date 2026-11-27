@@ -11673,6 +11673,21 @@ msgstr ""
 msgid "No records yet"
 msgstr ""
 
+#: lib/delivest_web/live/staff/product_live/products.ex
+#, elixir-autogen, elixir-format
+msgid "Select all on this page"
+msgstr ""
+
+#: lib/delivest_web/live/staff/product_live/products.ex
+#, elixir-autogen, elixir-format
+msgid "%{count} products on this page"
+msgstr ""
+
+#: lib/delivest_web/live/staff/stock_live/stocks.ex
+#, elixir-autogen, elixir-format
+msgid "No banners yet"
+msgstr ""
+
 #: lib/delivest_web/components/staff/foundation_components.ex:407
 #, elixir-autogen, elixir-format
 msgid "None"

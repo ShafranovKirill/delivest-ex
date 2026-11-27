@@ -642,8 +642,8 @@
       "handler_clauses": [
         "event:lib/delivest_web/live/staff/category_live/categories.ex:delete_click:b67f85d2bf57e878:1"
       ],
-      "id": "control:lib/delivest_web/live/staff/category_live/categories.ex:delete_click:signature:2cde945e2e0842e2:1",
-      "label": "unlabelled/icon control at source anchor",
+      "id": "control:lib/delivest_web/live/staff/category_live/categories.ex:delete_click:signature:34d2fba47689b5f5:1",
+      "label": "\": \" <> category.name} >",
       "operation": [
         "Identity.can?",
         "Net.get_branch_category"
@@ -663,7 +663,7 @@
           "products.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/category_live/categories.ex:256",
+      "source": "lib/delivest_web/live/staff/category_live/categories.ex:258",
       "target_section": "Menu"
     },
     {
@@ -773,7 +773,7 @@
       "handler_clauses": [
         "event:lib/delivest_web/live/staff/client_live/clients.ex:delete_click:e7d2a89bc41f7063:1"
       ],
-      "id": "control:lib/delivest_web/live/staff/client_live/clients.ex:delete_click:signature:a0a1ada17f203273:1",
+      "id": "control:lib/delivest_web/live/staff/client_live/clients.ex:delete_click:signature:e8130ee430661b7d:1",
       "label": "unlabelled/icon control at source anchor",
       "operation": [
         "Identity.can?",
@@ -794,7 +794,7 @@
           "clients.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/client_live/clients.ex:372",
+      "source": "lib/delivest_web/live/staff/client_live/clients.ex:375",
       "target_section": "Clients"
     },
     {
@@ -4898,8 +4898,8 @@
       "handler_clauses": [
         "event:lib/delivest_web/live/staff/order_live/order_form.ex:add_item:4837f120680d804a:1"
       ],
-      "id": "control:lib/delivest_web/live/staff/order_live/components/cart_component.ex:add_item:signature:16cf108037875cf6:1",
-      "label": "unlabelled/icon control at source anchor",
+      "id": "control:lib/delivest_web/live/staff/order_live/components/cart_component.ex:add_item:signature:92ae6b69f88e6222:1",
+      "label": "\" \" <> item.name} class=\"btn btn-xs btn-square btn-ghost\" >",
       "operation": [
         "Delivest.Net.Modifiers.for_products",
         "Map.get",
@@ -4910,7 +4910,7 @@
         "inline": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/cart_component.ex:88",
+      "source": "lib/delivest_web/live/staff/order_live/components/cart_component.ex:89",
       "target_section": "Orders"
     },
     {
@@ -4937,7 +4937,7 @@
         "inline": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/cart_component.ex:117",
+      "source": "lib/delivest_web/live/staff/order_live/components/cart_component.ex:120",
       "target_section": "Orders"
     },
     {
@@ -4951,8 +4951,8 @@
       "handler_clauses": [
         "event:lib/delivest_web/live/staff/order_live/order_form.ex:delete_item:c6c3ab153ef3ad96:1"
       ],
-      "id": "control:lib/delivest_web/live/staff/order_live/components/cart_component.ex:delete_item:signature:68ef9fbfeb7263fc:1",
-      "label": "unlabelled/icon control at source anchor",
+      "id": "control:lib/delivest_web/live/staff/order_live/components/cart_component.ex:delete_item:signature:eb30165659912f68:1",
+      "label": "\" \" <> item.name} class=\"btn btn-xs btn-square btn-ghost text-error\" >",
       "operation": [
         "Oms.remove_item"
       ],
@@ -4961,7 +4961,7 @@
         "inline": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/cart_component.ex:96",
+      "source": "lib/delivest_web/live/staff/order_live/components/cart_component.ex:98",
       "target_section": "Orders"
     },
     {
@@ -5029,8 +5029,8 @@
       "handler_clauses": [
         "event:lib/delivest_web/live/staff/order_live/order_form.ex:remove_item:6432bc2d65dc9203:1"
       ],
-      "id": "control:lib/delivest_web/live/staff/order_live/components/cart_component.ex:remove_item:signature:c3fdcb6795f034ab:1",
-      "label": "unlabelled/icon control at source anchor",
+      "id": "control:lib/delivest_web/live/staff/order_live/components/cart_component.ex:remove_item:signature:642da2fdc1fd2508:1",
+      "label": "\" \" <> item.name} class=\"btn btn-xs btn-square btn-ghost\" >",
       "operation": [
         "Oms.remove_item"
       ],
@@ -5063,7 +5063,7 @@
         "inline": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/cart_component.ex:152",
+      "source": "lib/delivest_web/live/staff/order_live/components/cart_component.ex:155",
       "target_section": "Orders"
     },
     {
@@ -5086,7 +5086,7 @@
         "inline": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/cart_component.ex:187",
+      "source": "lib/delivest_web/live/staff/order_live/components/cart_component.ex:190",
       "target_section": "Orders"
     },
     {
@@ -5100,8 +5100,8 @@
       "handler_clauses": [
         "event:lib/delivest_web/live/staff/order_live/order_form.ex:add_item:4837f120680d804a:1"
       ],
-      "id": "control:lib/delivest_web/live/staff/order_live/components/catalog_component.ex:add_item:signature:16cf108037875cf6:1",
-      "label": "unlabelled/icon control at source anchor",
+      "id": "control:lib/delivest_web/live/staff/order_live/components/catalog_component.ex:add_item:signature:92ae6b69f88e6222:1",
+      "label": "\" \" <> item.name} class=\"btn btn-xs btn-square btn-ghost\" >",
       "operation": [
         "Delivest.Net.Modifiers.for_products",
         "Map.get",
@@ -5112,7 +5112,7 @@
         "inline": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/catalog_component.ex:229",
+      "source": "lib/delivest_web/live/staff/order_live/components/catalog_component.ex:232",
       "target_section": "Orders"
     },
     {
@@ -5164,7 +5164,7 @@
         "inline": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/catalog_component.ex:184",
+      "source": "lib/delivest_web/live/staff/order_live/components/catalog_component.ex:186",
       "target_section": "Orders"
     },
     {
@@ -5192,7 +5192,7 @@
         "inline": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/catalog_component.ex:206",
+      "source": "lib/delivest_web/live/staff/order_live/components/catalog_component.ex:208",
       "target_section": "Orders"
     },
     {
@@ -5206,8 +5206,8 @@
       "handler_clauses": [
         "event:lib/delivest_web/live/staff/order_live/order_form.ex:remove_item:6432bc2d65dc9203:1"
       ],
-      "id": "control:lib/delivest_web/live/staff/order_live/components/catalog_component.ex:remove_item:signature:c3fdcb6795f034ab:1",
-      "label": "unlabelled/icon control at source anchor",
+      "id": "control:lib/delivest_web/live/staff/order_live/components/catalog_component.ex:remove_item:signature:642da2fdc1fd2508:1",
+      "label": "\" \" <> item.name} class=\"btn btn-xs btn-square btn-ghost\" >",
       "operation": [
         "Oms.remove_item"
       ],
@@ -5216,7 +5216,7 @@
         "inline": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/catalog_component.ex:220",
+      "source": "lib/delivest_web/live/staff/order_live/components/catalog_component.ex:222",
       "target_section": "Orders"
     },
     {
@@ -5305,7 +5305,7 @@
         "inline": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/catalog_component.ex:245",
+      "source": "lib/delivest_web/live/staff/order_live/components/catalog_component.ex:249",
       "target_section": "Orders"
     },
     {
@@ -5319,7 +5319,7 @@
       "handler_clauses": [
         "event:lib/delivest_web/live/staff/order_live/order_form.ex:toggle_mobile_cart:efba920713ea05a1:1"
       ],
-      "id": "control:lib/delivest_web/live/staff/order_live/components/catalog_component.ex:toggle_mobile_cart:signature:b446d73a5fa882fd:1",
+      "id": "control:lib/delivest_web/live/staff/order_live/components/catalog_component.ex:toggle_mobile_cart:signature:01a7aaf532c5d0c0:1",
       "label": "Cart",
       "operation": [],
       "result": [],
@@ -5449,7 +5449,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:257",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:295",
       "target_section": "Orders"
     },
     {
@@ -5478,7 +5478,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:928",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:981",
       "target_section": "Orders"
     },
     {
@@ -5504,7 +5504,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:958",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1011",
       "target_section": "Orders"
     },
     {
@@ -5539,7 +5539,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:187",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:225",
       "target_section": "Orders"
     },
     {
@@ -5569,7 +5569,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:943",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:996",
       "target_section": "Orders"
     },
     {
@@ -5598,7 +5598,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1035",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1088",
       "target_section": "Orders"
     },
     {
@@ -5612,7 +5612,7 @@
       "handler_clauses": [
         "event:lib/delivest_web/live/staff/order_live/orders.ex:correct_receipt:e2253f2caf7d06d4:1"
       ],
-      "id": "control:lib/delivest_web/live/staff/order_live/components/order_card_component.ex:correct_receipt:signature:ff65e13b4d13eeb1:1",
+      "id": "control:lib/delivest_web/live/staff/order_live/components/order_card_component.ex:correct_receipt:signature:dab379235d9a6035:1",
       "label": "Correction",
       "operation": [],
       "result": [],
@@ -5624,7 +5624,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:646",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:692",
       "target_section": "Orders"
     },
     {
@@ -5655,7 +5655,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:790",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:843",
       "target_section": "Orders"
     },
     {
@@ -5688,7 +5688,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:346",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:384",
       "target_section": "Orders"
     },
     {
@@ -5721,7 +5721,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:302",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:340",
       "target_section": "Orders"
     },
     {
@@ -5756,7 +5756,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:359",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:397",
       "target_section": "Orders"
     },
     {
@@ -5789,7 +5789,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:320",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:358",
       "target_section": "Orders"
     },
     {
@@ -5817,7 +5817,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:460",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:498",
       "target_section": "Orders"
     },
     {
@@ -5848,7 +5848,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1065",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1118",
       "target_section": "Orders"
     },
     {
@@ -5877,7 +5877,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1055",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1108",
       "target_section": "Orders"
     },
     {
@@ -5905,7 +5905,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:659",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:707",
       "target_section": "Orders"
     },
     {
@@ -5933,7 +5933,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:634",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:680",
       "target_section": "Orders"
     },
     {
@@ -5959,7 +5959,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:968",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1021",
       "target_section": "Orders"
     },
     {
@@ -5988,7 +5988,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1101",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1154",
       "target_section": "Orders"
     },
     {
@@ -6205,7 +6205,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:435",
+      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:437",
       "target_section": "Orders"
     },
     {
@@ -6235,7 +6235,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:411",
+      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:413",
       "target_section": "Orders"
     },
     {
@@ -7763,7 +7763,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:840",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:890",
       "target_section": "Menu"
     },
     {
@@ -7799,7 +7799,38 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:728",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:778",
+      "target_section": "Menu"
+    },
+    {
+      "availability": "no inline :if",
+      "confirmation": "no inline confirmation marker",
+      "disposition": "retain control in Menu",
+      "error_state": [
+        "no explicit :error in clause"
+      ],
+      "event": "select_product_page",
+      "handler_clauses": [
+        "event:lib/delivest_web/live/staff/product_live/products.ex:select_product_page:1a23bc201a329c30:1"
+      ],
+      "id": "control:lib/delivest_web/live/staff/product_live/products.ex:select_product_page:dom:product-select-page:1",
+      "label": "Select all on this page",
+      "operation": [
+        "Identity.can?",
+        "MapSet.to_list"
+      ],
+      "result": [],
+      "rights": {
+        "inline": [],
+        "module_references": [
+          "products.create",
+          "products.delete",
+          "products.read",
+          "products.update",
+          "stops.update"
+        ]
+      },
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:726",
       "target_section": "Menu"
     },
     {
@@ -7944,7 +7975,7 @@
           "products.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/tags.ex:236",
+      "source": "lib/delivest_web/live/staff/product_live/tags.ex:240",
       "target_section": "Menu"
     },
     {
@@ -7958,7 +7989,7 @@
       "handler_clauses": [
         "event:lib/delivest_web/live/staff/product_live/tags.ex:delete_click:a8b5a4c063c397ee:1"
       ],
-      "id": "control:lib/delivest_web/live/staff/product_live/tags.ex:delete_click:signature:58919e9efcd2fef2:1",
+      "id": "control:lib/delivest_web/live/staff/product_live/tags.ex:delete_click:signature:7022d02837bd6a8e:1",
       "label": "unlabelled/icon control at source anchor",
       "operation": [
         "Net.get_product_tag"
@@ -7971,7 +8002,7 @@
           "products.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/tags.ex:172",
+      "source": "lib/delivest_web/live/staff/product_live/tags.ex:176",
       "target_section": "Menu"
     },
     {
@@ -8005,7 +8036,7 @@
           "products.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/tags.ex:191",
+      "source": "lib/delivest_web/live/staff/product_live/tags.ex:195",
       "target_section": "Menu"
     },
     {
@@ -8597,7 +8628,7 @@
       "handler_clauses": [
         "event:lib/delivest_web/live/staff/role_live/roles.ex:delete_click:ba71e571eb3e0bd0:1"
       ],
-      "id": "control:lib/delivest_web/live/staff/role_live/roles.ex:delete_click:signature:b247f43314de49dc:1",
+      "id": "control:lib/delivest_web/live/staff/role_live/roles.ex:delete_click:signature:6ef881b9d70bf42f:1",
       "label": "unlabelled/icon control at source anchor",
       "operation": [
         "Identity.can?",
@@ -8619,7 +8650,7 @@
           "roles.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/role_live/roles.ex:256",
+      "source": "lib/delivest_web/live/staff/role_live/roles.ex:245",
       "target_section": "Settings / Team and access"
     },
     {
@@ -8680,7 +8711,7 @@
           "segments.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/segment_live/index.ex:972",
+      "source": "lib/delivest_web/live/staff/segment_live/index.ex:974",
       "target_section": "Clients"
     },
     {
@@ -8707,7 +8738,7 @@
           "segments.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/segment_live/index.ex:1064",
+      "source": "lib/delivest_web/live/staff/segment_live/index.ex:1066",
       "target_section": "Clients"
     },
     {
@@ -8734,7 +8765,7 @@
           "segments.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/segment_live/index.ex:611",
+      "source": "lib/delivest_web/live/staff/segment_live/index.ex:616",
       "target_section": "Clients"
     },
     {
@@ -8761,7 +8792,7 @@
           "segments.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/segment_live/index.ex:603",
+      "source": "lib/delivest_web/live/staff/segment_live/index.ex:608",
       "target_section": "Clients"
     },
     {
@@ -8790,61 +8821,7 @@
           "segments.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/segment_live/index.ex:761",
-      "target_section": "Clients"
-    },
-    {
-      "availability": "no inline :if",
-      "confirmation": "no inline confirmation marker",
-      "disposition": "retain control in Clients",
-      "error_state": [
-        "no explicit :error in clause"
-      ],
-      "event": "client_sort",
-      "handler_clauses": [
-        "event:lib/delivest_web/live/staff/segment_live/index.ex:client_sort:416dd1537e405c57:1"
-      ],
-      "id": "control:lib/delivest_web/live/staff/segment_live/index.ex:client_sort:signature:52f0b0417ff1e4f9:1",
-      "label": "Имя {sort_marker(@client_page, \"name\")}",
-      "operation": [],
-      "result": [],
-      "rights": {
-        "inline": [],
-        "module_references": [
-          "marketing.read",
-          "segments.manage",
-          "segments.network",
-          "segments.read"
-        ]
-      },
-      "source": "lib/delivest_web/live/staff/segment_live/index.ex:1227",
-      "target_section": "Clients"
-    },
-    {
-      "availability": "no inline :if",
-      "confirmation": "no inline confirmation marker",
-      "disposition": "retain control in Clients",
-      "error_state": [
-        "no explicit :error in clause"
-      ],
-      "event": "client_sort",
-      "handler_clauses": [
-        "event:lib/delivest_web/live/staff/segment_live/index.ex:client_sort:416dd1537e405c57:1"
-      ],
-      "id": "control:lib/delivest_web/live/staff/segment_live/index.ex:client_sort:signature:c70527685e0d8236:1",
-      "label": "Телефон {sort_marker(@client_page, \"phone\")}",
-      "operation": [],
-      "result": [],
-      "rights": {
-        "inline": [],
-        "module_references": [
-          "marketing.read",
-          "segments.manage",
-          "segments.network",
-          "segments.read"
-        ]
-      },
-      "source": "lib/delivest_web/live/staff/segment_live/index.ex:1235",
+      "source": "lib/delivest_web/live/staff/segment_live/index.ex:766",
       "target_section": "Clients"
     },
     {
@@ -8871,7 +8848,7 @@
           "segments.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/segment_live/index.ex:1214",
+      "source": "lib/delivest_web/live/staff/segment_live/index.ex:1216",
       "target_section": "Clients"
     },
     {
@@ -8905,7 +8882,7 @@
           "segments.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/segment_live/index.ex:789",
+      "source": "lib/delivest_web/live/staff/segment_live/index.ex:794",
       "target_section": "Clients"
     },
     {
@@ -8935,7 +8912,7 @@
           "segments.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/segment_live/index.ex:991",
+      "source": "lib/delivest_web/live/staff/segment_live/index.ex:993",
       "target_section": "Clients"
     },
     {
@@ -8971,7 +8948,7 @@
           "segments.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/segment_live/index.ex:1065",
+      "source": "lib/delivest_web/live/staff/segment_live/index.ex:1067",
       "target_section": "Clients"
     },
     {
@@ -9000,7 +8977,7 @@
           "segments.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/segment_live/index.ex:862",
+      "source": "lib/delivest_web/live/staff/segment_live/index.ex:864",
       "target_section": "Clients"
     },
     {
@@ -9030,7 +9007,7 @@
           "segments.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/segment_live/index.ex:914",
+      "source": "lib/delivest_web/live/staff/segment_live/index.ex:916",
       "target_section": "Clients"
     },
     {
@@ -9136,7 +9113,7 @@
       "handler_clauses": [
         "event:lib/delivest_web/live/staff/staff_live/staffs.ex:delete_click:05f043c2f1f258fb:1"
       ],
-      "id": "control:lib/delivest_web/live/staff/staff_live/staffs.ex:delete_click:signature:5c99c464495937c0:1",
+      "id": "control:lib/delivest_web/live/staff/staff_live/staffs.ex:delete_click:signature:07b89b0d5fd44e22:1",
       "label": "unlabelled/icon control at source anchor",
       "operation": [
         "Identity.can?",
@@ -9156,7 +9133,7 @@
           "staff.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/staff_live/staffs.ex:297",
+      "source": "lib/delivest_web/live/staff/staff_live/staffs.ex:299",
       "target_section": "Settings / Team and access"
     },
     {
@@ -9468,7 +9445,7 @@
       "handler_clauses": [
         "event:lib/delivest_web/live/staff/stock_live/stocks.ex:delete_click:fda0305f0b06989b:1"
       ],
-      "id": "control:lib/delivest_web/live/staff/stock_live/stocks.ex:delete_click:signature:06fd0cee4ef5d4da:1",
+      "id": "control:lib/delivest_web/live/staff/stock_live/stocks.ex:delete_click:signature:866d63f43e2abc06:1",
       "label": "unlabelled/icon control at source anchor",
       "operation": [
         "Identity.can?",
@@ -9490,7 +9467,7 @@
           "stocks.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/stock_live/stocks.ex:288",
+      "source": "lib/delivest_web/live/staff/stock_live/stocks.ex:289",
       "target_section": "Marketing"
     },
     {
@@ -10537,7 +10514,7 @@
       "error_state": "explicit :error branch/reference",
       "event": "delete_click",
       "id": "event:lib/delivest_web/live/staff/category_live/categories.ex:delete_click:b67f85d2bf57e878:1",
-      "label": "event: delete_click",
+      "label": "\": \"",
       "operation": [
         "Identity.can?",
         "Net.get_branch_category"
@@ -18063,7 +18040,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:285",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:304",
       "target_section": "Menu"
     },
     {
@@ -18086,7 +18063,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:295",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:314",
       "target_section": "Menu"
     },
     {
@@ -18109,7 +18086,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:281",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:300",
       "target_section": "Menu"
     },
     {
@@ -18132,7 +18109,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:334",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:362",
       "target_section": "Menu"
     },
     {
@@ -18155,27 +18132,19 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:183",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:202",
       "target_section": "Menu"
     },
     {
-      "availability": "conditional branch in handler clause",
+      "availability": "no inline conditional in handler clause",
       "confirmation": "no confirmation marker found in module",
       "disposition": "retain operation; move control with Menu",
-      "error_state": "explicit :error branch/reference",
+      "error_state": "no explicit :error in clause",
       "event": "confirm_bulk_delete",
-      "id": "event:lib/delivest_web/live/staff/product_live/products.ex:confirm_bulk_delete:697fe63402a7c5a0:1",
+      "id": "event:lib/delivest_web/live/staff/product_live/products.ex:confirm_bulk_delete:24e46bbe2bcd7092:1",
       "label": "event: confirm_bulk_delete",
-      "operation": [
-        "Enum.filter",
-        "Identity.fresh_staff",
-        "MapSet.member?",
-        "Net.soft_delete_products"
-      ],
-      "result": [
-        "put_flash",
-        "push_patch"
-      ],
+      "operation": [],
+      "result": [],
       "rights": {
         "clause": [],
         "module_references": [
@@ -18186,7 +18155,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:303",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:357",
       "target_section": "Menu"
     },
     {
@@ -18209,7 +18178,38 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:299",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:318",
+      "target_section": "Menu"
+    },
+    {
+      "availability": "conditional branch in handler clause",
+      "confirmation": "no confirmation marker found in module",
+      "disposition": "retain operation; move control with Menu",
+      "error_state": "explicit :error branch/reference",
+      "event": "confirm_bulk_delete",
+      "id": "event:lib/delivest_web/live/staff/product_live/products.ex:confirm_bulk_delete:fb91ec1fa2fc486c:1",
+      "label": "event: confirm_bulk_delete",
+      "operation": [
+        "Enum.filter",
+        "Identity.fresh_staff",
+        "MapSet.member?",
+        "Net.soft_delete_products"
+      ],
+      "result": [
+        "put_flash",
+        "push_patch"
+      ],
+      "rights": {
+        "clause": [],
+        "module_references": [
+          "products.create",
+          "products.delete",
+          "products.read",
+          "products.update",
+          "stops.update"
+        ]
+      },
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:322",
       "target_section": "Menu"
     },
     {
@@ -18232,7 +18232,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:261",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:280",
       "target_section": "Menu"
     },
     {
@@ -18255,7 +18255,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:257",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:276",
       "target_section": "Menu"
     },
     {
@@ -18284,7 +18284,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:264",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:283",
       "target_section": "Menu"
     },
     {
@@ -18315,7 +18315,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:243",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:262",
       "target_section": "Menu"
     },
     {
@@ -18340,7 +18340,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:188",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:207",
       "target_section": "Menu"
     },
     {
@@ -18366,7 +18366,35 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:226",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:245",
+      "target_section": "Menu"
+    },
+    {
+      "availability": "conditional branch in handler clause",
+      "confirmation": "no confirmation marker found in module",
+      "disposition": "retain operation; move control with Menu",
+      "error_state": "no explicit :error in clause",
+      "event": "select_product_page",
+      "id": "event:lib/delivest_web/live/staff/product_live/products.ex:select_product_page:1a23bc201a329c30:1",
+      "label": "{gettext(\"Select all on this page\")}",
+      "operation": [
+        "Identity.can?",
+        "MapSet.to_list"
+      ],
+      "result": [],
+      "rights": {
+        "clause": [
+          "products.delete"
+        ],
+        "module_references": [
+          "products.create",
+          "products.delete",
+          "products.read",
+          "products.update",
+          "stops.update"
+        ]
+      },
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:186",
       "target_section": "Menu"
     },
     {
@@ -18375,12 +18403,13 @@
       "disposition": "retain operation; move control with Menu",
       "error_state": "no explicit :error in clause",
       "event": "select_products",
-      "id": "event:lib/delivest_web/live/staff/product_live/products.ex:select_products:b900c7090571de6d:1",
+      "id": "event:lib/delivest_web/live/staff/product_live/products.ex:select_products:8c46abc5b79b8881:1",
       "label": "event: select_products",
       "operation": [
         "Enum.filter",
         "Enum.uniq",
         "Identity.can?",
+        "List.wrap",
         "Map.get",
         "MapSet.member?"
       ],
@@ -18397,7 +18426,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:167",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:169",
       "target_section": "Menu"
     },
     {
@@ -18424,7 +18453,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:214",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:233",
       "target_section": "Menu"
     },
     {
@@ -18451,7 +18480,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:151",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:153",
       "target_section": "Menu"
     },
     {
@@ -18476,7 +18505,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:236",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:255",
       "target_section": "Menu"
     },
     {
@@ -19761,7 +19790,7 @@
           "segments.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/segment_live/index.ex:452",
+      "source": "lib/delivest_web/live/staff/segment_live/index.ex:441",
       "target_section": "Clients"
     },
     {
@@ -19827,7 +19856,7 @@
           "segments.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/segment_live/index.ex:390",
+      "source": "lib/delivest_web/live/staff/segment_live/index.ex:379",
       "target_section": "Clients"
     },
     {
@@ -19841,28 +19870,6 @@
       "operation": [
         "String.length"
       ],
-      "result": [],
-      "rights": {
-        "clause": [],
-        "module_references": [
-          "marketing.read",
-          "segments.manage",
-          "segments.network",
-          "segments.read"
-        ]
-      },
-      "source": "lib/delivest_web/live/staff/segment_live/index.ex:382",
-      "target_section": "Clients"
-    },
-    {
-      "availability": "conditional branch in handler clause",
-      "confirmation": "confirmation marker in module; inspect event flow",
-      "disposition": "retain operation; move control with Clients",
-      "error_state": "no explicit :error in clause",
-      "event": "client_sort",
-      "id": "event:lib/delivest_web/live/staff/segment_live/index.ex:client_sort:416dd1537e405c57:1",
-      "label": "Имя {sort_marker(@client_page, \"name\")} / Телефон {sort_marker(@client_page, \"phone\")}",
-      "operation": [],
       "result": [],
       "rights": {
         "clause": [],
@@ -19895,7 +19902,7 @@
           "segments.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/segment_live/index.ex:460",
+      "source": "lib/delivest_web/live/staff/segment_live/index.ex:449",
       "target_section": "Clients"
     },
     {
@@ -19991,7 +19998,7 @@
           "segments.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/segment_live/index.ex:456",
+      "source": "lib/delivest_web/live/staff/segment_live/index.ex:445",
       "target_section": "Clients"
     },
     {
@@ -20022,7 +20029,7 @@
           "segments.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/segment_live/index.ex:394",
+      "source": "lib/delivest_web/live/staff/segment_live/index.ex:383",
       "target_section": "Clients"
     },
     {
@@ -28415,7 +28422,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "promo[code]",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/cart_component.ex:125",
+      "source": "lib/delivest_web/live/staff/order_live/components/cart_component.ex:128",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28520,7 +28527,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "comment",
       "schema_field": "schema:lib/delivest/oms/order.ex:comment",
-      "source": "lib/delivest_web/live/staff/order_live/components/details_component.ex:168",
+      "source": "lib/delivest_web/live/staff/order_live/components/details_component.ex:169",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": [
@@ -28864,7 +28871,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "at",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:196",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:234",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28885,7 +28892,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "reason",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:203",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:241",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28906,7 +28913,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "action",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:309",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:347",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28927,7 +28934,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "code",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:797",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:850",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28948,7 +28955,7 @@
       "required": "HTML required attribute; server validation must be checked",
       "resolved_field": "confirmed",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:329",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:367",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28969,7 +28976,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "courier_id",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1084",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1137",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28990,7 +28997,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "delivery_id",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:949",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1002",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -29011,7 +29018,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "number",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:310",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:348",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -29032,7 +29039,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "order-id",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:796",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:849",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -29053,7 +29060,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "order_id",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:194",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:232",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -29074,7 +29081,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "payment_method",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:418",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:456",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -29095,7 +29102,7 @@
       "required": "HTML required attribute; server validation must be checked",
       "resolved_field": "reason",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:953",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1006",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -29116,7 +29123,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "to",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:950",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1003",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -29389,7 +29396,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "name-expression:\"modifiers[#{group.id}][]\"",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:419",
+      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:421",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -30493,7 +30500,7 @@
       "required": "not applicable: transient search/query input",
       "resolved_field": "search",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:560",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:594",
       "target_section": "Menu / Products",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -30514,7 +30521,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "category_id",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:572",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:606",
       "target_section": "Menu / Products",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -30535,7 +30542,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "ids[]",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:703",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:751",
       "target_section": "Menu / Products",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -30556,7 +30563,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "is_active",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:584",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:618",
       "target_section": "Menu / Products",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -30619,7 +30626,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "icon",
       "schema_field": "schema:lib/delivest/net/product_tag.ex:icon",
-      "source": "lib/delivest_web/live/staff/product_live/tags.ex:212",
+      "source": "lib/delivest_web/live/staff/product_live/tags.ex:216",
       "target_section": "Menu / Tags",
       "type": "literal staff form control",
       "validation": [
@@ -30642,7 +30649,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "name",
       "schema_field": "schema:lib/delivest/net/product_tag.ex:name",
-      "source": "lib/delivest_web/live/staff/product_live/tags.ex:200",
+      "source": "lib/delivest_web/live/staff/product_live/tags.ex:204",
       "target_section": "Menu / Tags",
       "type": "literal staff form control",
       "validation": [
@@ -30666,7 +30673,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "icon",
       "schema_field": "schema:lib/delivest/net/product_tag.ex:icon",
-      "source": "lib/delivest_web/live/staff/product_live/tags.ex:210",
+      "source": "lib/delivest_web/live/staff/product_live/tags.ex:214",
       "target_section": "Menu / Tags",
       "type": "literal staff form control",
       "validation": [
@@ -31916,7 +31923,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "search",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/segment_live/index.ex:771",
+      "source": "lib/delivest_web/live/staff/segment_live/index.ex:776",
       "target_section": "Clients / Segments",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -31937,7 +31944,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "metric",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/segment_live/index.ex:945",
+      "source": "lib/delivest_web/live/staff/segment_live/index.ex:947",
       "target_section": "Clients / Segments",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -31958,7 +31965,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "op",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/segment_live/index.ex:956",
+      "source": "lib/delivest_web/live/staff/segment_live/index.ex:958",
       "target_section": "Clients / Segments",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -31979,7 +31986,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "value",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/segment_live/index.ex:962",
+      "source": "lib/delivest_web/live/staff/segment_live/index.ex:964",
       "target_section": "Clients / Segments",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -32000,7 +32007,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "kind",
       "schema_field": "schema:lib/delivest/segments/segment.ex:kind",
-      "source": "lib/delivest_web/live/staff/segment_live/index.ex:876",
+      "source": "lib/delivest_web/live/staff/segment_live/index.ex:878",
       "target_section": "Clients / Segments",
       "type": "literal staff form control",
       "validation": [
@@ -32023,7 +32030,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "match",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/segment_live/index.ex:935",
+      "source": "lib/delivest_web/live/staff/segment_live/index.ex:937",
       "target_section": "Clients / Segments",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -32044,7 +32051,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "name",
       "schema_field": "schema:lib/delivest/segments/segment.ex:name",
-      "source": "lib/delivest_web/live/staff/segment_live/index.ex:871",
+      "source": "lib/delivest_web/live/staff/segment_live/index.ex:873",
       "target_section": "Clients / Segments",
       "type": "literal staff form control",
       "validation": [
@@ -32068,7 +32075,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "scope",
       "schema_field": "schema:lib/delivest/segments/segment.ex:scope",
-      "source": "lib/delivest_web/live/staff/segment_live/index.ex:889",
+      "source": "lib/delivest_web/live/staff/segment_live/index.ex:891",
       "target_section": "Clients / Segments",
       "type": "literal staff form control",
       "validation": [

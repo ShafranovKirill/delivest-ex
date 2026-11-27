@@ -240,6 +240,7 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
                 patch={~p"/staff/b/#{@current_branch}/categories/#{category.id}/products"}
                 class="btn btn-sm btn-ghost btn-square"
                 title={gettext("Products order")}
+                aria-label={gettext("Products order") <> ": " <> category.name}
               >
                 <.icon name="hero-queue-list" class="w-5 h-5" />
               </.link>
@@ -249,6 +250,7 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
                 patch={~p"/staff/b/#{@current_branch}/categories/#{category.id}/edit"}
                 class="btn btn-sm btn-ghost btn-square text-info"
                 title={gettext("Edit")}
+                aria-label={gettext("Edit") <> ": " <> category.name}
               >
                 <.icon name="hero-pencil-square" class="w-5 h-5" />
               </.link>
@@ -260,6 +262,7 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
                 phx-value-id={category.id}
                 class="btn btn-sm btn-ghost btn-square text-error"
                 title={gettext("Delete")}
+                aria-label={gettext("Delete") <> ": " <> category.name}
               >
                 <.icon name="hero-trash" class="w-5 h-5" />
               </button>

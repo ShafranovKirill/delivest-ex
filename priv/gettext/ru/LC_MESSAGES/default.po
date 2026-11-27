@@ -11826,6 +11826,21 @@ msgstr "Выбрать"
 msgid "Selected %{count} on this page"
 msgstr "Выбрано на странице: %{count}"
 
+#: lib/delivest_web/live/staff/product_live/products.ex
+#, elixir-autogen, elixir-format
+msgid "Select all on this page"
+msgstr "Выбрать всё на этой странице"
+
+#: lib/delivest_web/live/staff/product_live/products.ex
+#, elixir-autogen, elixir-format
+msgid "%{count} products on this page"
+msgstr "Товаров на этой странице: %{count}"
+
+#: lib/delivest_web/live/staff/stock_live/stocks.ex
+#, elixir-autogen, elixir-format
+msgid "No banners yet"
+msgstr "Баннеров пока нет"
+
 #: lib/delivest_web/live/staff/foundation_gallery_live.ex:416
 #, elixir-autogen, elixir-format
 msgid "Slug"

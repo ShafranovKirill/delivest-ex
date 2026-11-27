@@ -147,25 +147,29 @@ defmodule DelivestWeb.Staff.ProductLive.Tags do
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <div id="product-tags" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        <div
-          :for={tag <- @tags}
-          id={"product-tag-#{tag.id}"}
-          class="flex items-center gap-3 rounded-box border border-base-300 bg-base-100 p-3"
-        >
-          <div class="grid size-10 shrink-0 place-items-center rounded-full bg-base-200">
-            <.tag_icon tag={tag} class="size-5" />
+      <.table
+        id="product-tags"
+        rows={@tags}
+        row_id={fn tag -> "product-tag-#{tag.id}" end}
+        show_column_chooser={false}
+      >
+        <:col :let={tag} label={gettext("Name")}>
+          <div class="flex items-center gap-3">
+            <span class="grid size-9 shrink-0 place-items-center rounded-full bg-base-200">
+              <.tag_icon tag={tag} class="size-5" />
+            </span>
+            <span class="font-medium">{tag.name}</span>
           </div>
-          <div class="min-w-0 flex-1">
-            <div class="font-bold truncate">{tag.name}</div>
-            <div class="text-xs text-base-content/60">
-              {ngettext("%{count} product", "%{count} products", Map.get(@usage, tag.id, 0))}
-            </div>
-          </div>
-          <div :if={Identity.can?(@current_staff, "catalog.global.manage")} class="flex gap-1">
+        </:col>
+        <:col :let={tag} label={gettext("Products")}>
+          {ngettext("%{count} product", "%{count} products", Map.get(@usage, tag.id, 0))}
+        </:col>
+        <:action :let={tag} :if={Identity.can?(@current_staff, "catalog.global.manage")}>
+          <div class="flex gap-1">
             <.button
               patch={~p"/staff/b/#{@current_branch}/products/tags/#{tag.id}/edit"}
               class="btn btn-ghost btn-xs btn-square"
+              aria-label={gettext("Edit %{name}", name: tag.name)}
             >
               <.icon name="hero-pencil-square" class="size-4" />
             </.button>
@@ -173,14 +177,14 @@ defmodule DelivestWeb.Staff.ProductLive.Tags do
               phx-click="delete_click"
               phx-value-id={tag.id}
               class="btn btn-ghost btn-xs btn-square text-error hover:bg-error/10"
+              aria-label={gettext("Delete %{name}", name: tag.name)}
             >
               <.icon name="hero-trash" class="size-4" />
             </.button>
           </div>
-        </div>
-
-        <p :if={@tags == []} class="text-base-content/60">{gettext("No tags yet")}</p>
-      </div>
+        </:action>
+      </.table>
+      <.empty_state :if={@tags == []} title={gettext("No tags yet")} />
 
       <.slide_over
         id="product-tag-slideover"

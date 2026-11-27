@@ -345,7 +345,7 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
         </div>
       </details>
 
-      <p :if={@groups == []} class="text-base-content/60">{gettext("No modifier groups yet")}</p>
+      <.empty_state :if={@groups == []} title={gettext("No modifier groups yet")} />
 
       <details
         :for={group <- @groups}

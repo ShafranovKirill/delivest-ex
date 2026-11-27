@@ -106,33 +106,34 @@ defmodule DelivestWeb.Staff.ClientLive.ClientFormComponent do
         class="flex flex-col h-full"
       >
         <div class="flex-1 overflow-y-auto p-6 space-y-6">
-          <div class="divider text-xs font-bold uppercase text-base-content/50">
-            {gettext("Client Details")}
-          </div>
+          <DelivestWeb.Staff.FoundationComponents.form_section
+            id="client-details-section"
+            title={gettext("Client Details")}
+          >
+            <.input
+              field={@form[:phone]}
+              type="text"
+              label={gettext("Phone Number")}
+              placeholder="+79991112233"
+              required
+            />
 
-          <.input
-            field={@form[:phone]}
-            type="text"
-            label={gettext("Phone Number")}
-            placeholder="+79991112233"
-            required
-          />
+            <.input
+              field={@form[:name]}
+              type="text"
+              label={gettext("Name")}
+              placeholder={gettext("Client Name")}
+            />
 
-          <.input
-            field={@form[:name]}
-            type="text"
-            label={gettext("Name")}
-            placeholder={gettext("Client Name")}
-          />
-
-          <.input field={@form[:operator_note]} type="textarea" label={gettext("Operator note")} />
-          <.input
-            field={@form[:status]}
-            type="select"
-            label={gettext("Status")}
-            options={@status_options}
-            required
-          />
+            <.input field={@form[:operator_note]} type="textarea" label={gettext("Operator note")} />
+            <.input
+              field={@form[:status]}
+              type="select"
+              label={gettext("Status")}
+              options={@status_options}
+              required
+            />
+          </DelivestWeb.Staff.FoundationComponents.form_section>
         </div>
 
         <DelivestWeb.Staff.FoundationComponents.editor_actions

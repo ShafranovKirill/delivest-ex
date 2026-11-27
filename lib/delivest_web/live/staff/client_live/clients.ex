@@ -359,6 +359,7 @@ defmodule DelivestWeb.Staff.ClientLive.Clients do
               navigate={~p"/staff/clients/#{client.id}?#{build_query_params(assigns, %{})}"}
               class="btn btn-ghost btn-xs btn-square"
               title={gettext("Client card and orders")}
+              aria-label={gettext("Client card and orders")}
             >
               <.icon name="hero-eye" class="size-4" />
             </.link>
@@ -366,6 +367,8 @@ defmodule DelivestWeb.Staff.ClientLive.Clients do
               :if={Identity.can?(@current_staff, "clients.update")}
               patch={~p"/staff/clients/#{client.id}/edit?#{build_query_params(assigns, %{})}"}
               class="btn btn-ghost btn-xs btn-square"
+              title={gettext("Edit")}
+              aria-label={gettext("Edit")}
             >
               <.icon name="hero-pencil-square" class="size-4" />
             </.button>
@@ -374,6 +377,8 @@ defmodule DelivestWeb.Staff.ClientLive.Clients do
               phx-click="delete_click"
               phx-value-id={client.id}
               class="btn btn-ghost btn-xs btn-square text-error hover:bg-error/10"
+              title={gettext("Delete")}
+              aria-label={gettext("Delete")}
             >
               <.icon name="hero-trash" class="size-4" />
             </.button>

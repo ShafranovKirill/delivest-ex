@@ -361,6 +361,10 @@ defmodule DelivestWeb.Staff.FoundationGalleryLive do
       else: {:noreply, socket}
   end
 
+  def handle_event("clear_bulk_selection", _params, socket) do
+    {:noreply, assign(socket, list: %{socket.assigns.list | selected: MapSet.new()})}
+  end
+
   def handle_event("cancel_bulk", _params, socket),
     do: {:noreply, assign(socket, bulk_pending: false)}
 
@@ -653,7 +657,11 @@ defmodule DelivestWeb.Staff.FoundationGalleryLive do
             >Preview</button>
           </:action>
         </.data_table>
-        <.bulk_action_bar id="gallery-bulk" count={ListState.selected_count(@list)}>
+        <.bulk_action_bar
+          id="gallery-bulk"
+          count={ListState.selected_count(@list)}
+          clear_event="clear_bulk_selection"
+        >
           <button
             id="gallery-bulk-request"
             type="button"

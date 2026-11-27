@@ -281,6 +281,7 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
                 patch={~p"/staff/b/#{@current_branch}/stocks/#{stock.id}/edit"}
                 class="btn btn-sm btn-ghost btn-square text-info"
                 title={gettext("Edit")}
+                aria-label={gettext("Edit")}
               >
                 <.icon name="hero-pencil-square" class="w-5 h-5" />
               </.link>
@@ -292,6 +293,7 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
                 phx-value-id={stock.id}
                 class="btn btn-sm btn-ghost btn-square text-error"
                 title={gettext("Delete")}
+                aria-label={gettext("Delete")}
               >
                 <.icon name="hero-trash" class="w-5 h-5" />
               </button>
@@ -299,6 +301,7 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
           </div>
         <% end %>
       </div>
+      <.empty_state :if={@stocks == []} title={gettext("No banners yet")} />
 
       <.slide_over
         id="stock-slideover"
