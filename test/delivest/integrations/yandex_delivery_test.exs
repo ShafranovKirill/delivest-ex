@@ -279,6 +279,26 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
       assert Agent.get(yandex, & &1.created) == 1
     end
 
+    test "lookup continues after manual pickup of an ambiguous claim", %{yandex: yandex} do
+      fail_creation(yandex, [:lost, :timeout, :timeout])
+      branch = branch()
+      operator = operator(branch)
+      order = order(branch) |> cooking(operator)
+      delivery = Couriers.active(order.id)
+      assert delivery.external_id == nil
+
+      {:ok, ready} = Orders.advance_order(order, :ready, {:staff, operator})
+
+      assert {:ok, %Order{status: :delivering}} =
+               Orders.advance_order(ready, :delivering, {:staff, operator},
+                 delivery_id: delivery.id,
+                 reason: "Курьер забрал заказ"
+               )
+
+      assert :ok = perform_job(ClaimLookupWorker, lookup_args(delivery, order))
+      assert Repo.reload!(delivery).external_id == "claim-" <> delivery.id
+    end
+
     test "no claim within the window closes the attempt", %{yandex: yandex} do
       fail_creation(yandex, [:timeout, :timeout, :timeout])
       branch = branch()
@@ -597,6 +617,109 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
       assert YandexDelivery.poll(ctx.branch.id) == :done
     end
 
+    test "manual pickup and handover survive late claim updates", ctx do
+      {:ok, ready} = Orders.advance_order(ctx.order, :ready, {:staff, ctx.operator})
+
+      assert {:ok, %Order{status: :delivering}} =
+               Orders.advance_order(ready, :delivering, {:staff, ctx.operator},
+                 delivery_id: ctx.delivery.id,
+                 reason: "Фактически забрал курьер"
+               )
+
+      assert %Delivery{status: :picked_up} = Repo.reload!(ctx.delivery)
+      set_status(ctx.yandex, ctx.delivery.external_id, "performer_found")
+      poll(ctx.branch)
+      assert %Order{status: :delivering} = Repo.reload!(ctx.order)
+
+      assert %Delivery{status: :picked_up, details: %{"status" => "performer_found"}} =
+               Repo.reload!(ctx.delivery)
+
+      assert {:ok, %Order{status: :completed}} =
+               Orders.advance_order(Repo.reload!(ctx.order), :completed, {:staff, ctx.operator},
+                 delivery_id: ctx.delivery.id,
+                 reason: "Клиент подтвердил вручение"
+               )
+
+      deliver_events()
+
+      assert %Delivery{status: :picked_up, details: %{"manual_delivered" => true}} =
+               Repo.reload!(ctx.delivery)
+
+      set_status(ctx.yandex, ctx.delivery.external_id, "delivered_finish")
+      poll(ctx.branch)
+      assert %Order{status: :completed} = Repo.reload!(ctx.order)
+
+      assert %Delivery{status: :delivered, details: %{"status" => "delivered_finish"}} =
+               Repo.reload!(ctx.delivery)
+
+      transitions =
+        OrderTransition
+        |> where([t], t.order_id == ^ctx.order.id and t.to == :completed)
+        |> Repo.all()
+
+      assert length(transitions) == 1
+      refute_received {:yandex, "/claims/cancel", _, _}
+    end
+
+    test "older claim state does not replace the latest provider state", ctx do
+      set_status(ctx.yandex, ctx.delivery.external_id, "performer_found", %{"revision" => 3})
+      poll(ctx.branch)
+      assert %Delivery{status: :assigned} = Repo.reload!(ctx.delivery)
+
+      set_status(ctx.yandex, ctx.delivery.external_id, "accepted", %{"revision" => 2})
+      poll(ctx.branch)
+
+      assert %Delivery{status: :assigned, details: %{"status" => "performer_found"}} =
+               Repo.reload!(ctx.delivery)
+    end
+
+    test "returned claim closes without changing the completed manual order", ctx do
+      {:ok, ready} = Orders.advance_order(ctx.order, :ready, {:staff, ctx.operator})
+
+      {:ok, carrying} =
+        Orders.advance_order(ready, :delivering, {:staff, ctx.operator},
+          delivery_id: ctx.delivery.id,
+          reason: "Фактический забор"
+        )
+
+      {:ok, _} =
+        Orders.advance_order(carrying, :completed, {:staff, ctx.operator},
+          delivery_id: ctx.delivery.id,
+          reason: "Фактическое вручение"
+        )
+
+      deliver_events()
+      set_status(ctx.yandex, ctx.delivery.external_id, "returned_finish")
+      poll(ctx.branch)
+
+      assert %Order{status: :completed} = Repo.reload!(ctx.order)
+
+      assert %Delivery{status: :failed, details: %{"status" => "returned_finish"}} =
+               Repo.reload!(ctx.delivery)
+
+      refute_received {:yandex, "/claims/cancel", _, _}
+    end
+
+    test "late provider failure after manual pickup does not cancel the claim", ctx do
+      {:ok, ready} = Orders.advance_order(ctx.order, :ready, {:staff, ctx.operator})
+
+      {:ok, _} =
+        Orders.advance_order(ready, :delivering, {:staff, ctx.operator},
+          delivery_id: ctx.delivery.id,
+          reason: "Забор подтверждён"
+        )
+
+      set_status(ctx.yandex, ctx.delivery.external_id, "failed")
+      poll(ctx.branch)
+
+      assert %Order{status: :delivering} = Repo.reload!(ctx.order)
+
+      assert %Delivery{status: :failed, details: %{"status" => "failed"}} =
+               Repo.reload!(ctx.delivery)
+
+      refute_received {:yandex, "/claims/cancel", _, _}
+    end
+
     test "records a verified destination timestamp once after provider completion", ctx do
       actual = DateTime.utc_now() |> DateTime.to_iso8601()
 
@@ -671,6 +794,8 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
     end
 
     test "keeps the claim retryable when a verified timestamp cannot be stored", ctx do
+      Orders.subscribe(ctx.branch.id)
+      order_id = ctx.order.id
       invalid = DateTime.add(ctx.order.inserted_at, -60, :second) |> DateTime.to_iso8601()
 
       set_status(ctx.yandex, ctx.delivery.external_id, "delivered_finish", %{
@@ -689,6 +814,8 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
       assert %Order{status: :preparing, delivered_at: nil} = Repo.reload!(ctx.order)
       assert %Delivery{status: :searching} = Couriers.active(ctx.order.id)
       assert Repo.aggregate(ActualEvent, :count, :id) == 0
+
+      refute_received {Orders, [:order, :updated], %Order{id: ^order_id}}
     end
 
     test "a pickup before the kitchen marks it ready still moves the order", ctx do

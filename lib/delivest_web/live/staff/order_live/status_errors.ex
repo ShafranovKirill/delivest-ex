@@ -38,6 +38,13 @@ defmodule DelivestWeb.Staff.OrderLive.StatusErrors do
     do: gettext("The courier has picked up the order, its status cannot be reverted")
 
   def message(:not_ready), do: gettext("The order is not ready yet")
+
+  def message(:delivery_reason_required),
+    do: gettext("Enter a reason for manual delivery confirmation")
+
+  def message(:delivery_changed),
+    do: gettext("The delivery has changed. Check its current status.")
+
   def message(:no_offers), do: gettext("Yandex Delivery has no offers for this address")
   def message(:not_configured), do: gettext("Yandex Delivery is not set up for this branch")
 

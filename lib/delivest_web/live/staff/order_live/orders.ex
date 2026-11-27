@@ -181,6 +181,26 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     end
   end
 
+  def handle_event("confirm_delivery_step", params, socket) do
+    with %{"order_id" => id, "delivery_id" => delivery_id, "to" => target, "reason" => reason} <-
+           params,
+         {:ok, to} when to in [:delivering, :completed] <- StatusErrors.parse_status(target),
+         {:ok, delivery_id} <- Ecto.UUID.cast(delivery_id),
+         {:ok, order} <- fetch_branch_order(socket, id),
+         {:staff, %Identity.Staff{}} = actor <- staff(socket),
+         {:ok, _order} <-
+           Orders.advance_order(order, to, actor,
+             delivery_id: delivery_id,
+             reason: reason
+           ) do
+      load(socket)
+    else
+      {:error, _} = error -> failed(socket, error)
+      {:staff, nil} -> failed(socket, :forbidden)
+      _ -> failed(socket, :delivery_changed)
+    end
+  end
+
   def handle_event("confirm_delivery_promise", %{"order_id" => id, "promise" => params}, socket) do
     branch_id = socket.assigns.current_branch.id
     promised_at = LocalTime.parse(Map.get(params, "at", ""), branch_id)

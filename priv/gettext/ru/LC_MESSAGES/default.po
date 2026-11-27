@@ -14144,3 +14144,31 @@ msgstr "Бесплатные приборы при оформлении зака
 #, elixir-autogen, elixir-format
 msgid "Free: one set per started 1,000 ₽ of food after discounts, excluding delivery. Customers can change the quantity, including to 0."
 msgstr "Бесплатно: по одному набору на каждые начатые 1 000 ₽ стоимости блюд после скидок, без доставки. Покупатель может изменить количество, в том числе выбрать 0."
+
+msgid "Enter a reason for manual delivery confirmation"
+msgstr "Укажите причину ручного подтверждения"
+
+msgid "The delivery has changed. Check its current status."
+msgstr "Доставка изменилась. Проверьте её текущий статус."
+
+msgid "Reason for manual confirmation"
+msgstr "Причина ручного подтверждения"
+
+msgid "Confirm pickup manually"
+msgstr "Подтвердить передачу курьеру вручную"
+
+msgid "Confirm delivery manually"
+msgstr "Подтвердить доставку вручную"
+
+#, elixir-format
+msgid "Yandex claim: %{status}"
+msgstr "Заявка Яндекса: %{status}"
+
+msgid "Courier not found"
+msgstr "Курьер не найден"
+
+msgid "Returning to the restaurant"
+msgstr "Курьер возвращается в ресторан"
+
+msgid "Returned to the restaurant"
+msgstr "Курьер вернулся в ресторан"

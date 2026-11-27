@@ -32,13 +32,15 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
 
   def render_card(assigns) do
     crm_managed = Crm.effective_managed?(assigns.order)
+    delivery = Couriers.current(assigns.order)
 
     assigns =
       assign(assigns,
         crm_managed: crm_managed,
         printing: assigns.printing || Delivest.Printing.settings(assigns.current_branch.id),
         status: assigns.order.status,
-        delivery: Couriers.current(assigns.order),
+        delivery: delivery,
+        yandex_claim: yandex_claim(assigns.order, delivery),
         history: history(assigns.order),
         promise_form:
           to_form(
@@ -214,11 +216,12 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
 
       <.courier_panel
         :if={
-          @delivery != nil or
+          @delivery != nil or @yandex_claim != nil or
             (Couriers.assignable?(@order) and (@own_couriers_enabled or @estimable))
         }
         order={@order}
         delivery={@delivery}
+        yandex_claim={@yandex_claim}
         couriers={@couriers}
         estimable={@estimable}
         own_couriers_enabled={@own_couriers_enabled}
@@ -401,6 +404,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         </span>
         <.status_control
           order={@order}
+          delivery={@delivery}
           current_staff={@current_staff}
           last={@last}
           crm_managed={@crm_managed}
@@ -479,7 +483,10 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         <li
           :for={transition <- @history}
           id={"order-transition-#{transition.id}"}
-          class={["flex items-center gap-1", transition.reverted_at && "line-through opacity-60"]}
+          class={[
+            "flex flex-wrap items-center gap-1",
+            transition.reverted_at && "line-through opacity-60"
+          ]}
           title={
             transition.revert_reason &&
               gettext("Reverted: %{reason}", reason: transition.revert_reason)
@@ -491,6 +498,13 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
           </span>
           <span :if={@expanded}>{actor_label(@order, transition)}</span>
           <span class="tabular-nums">{OrderHelpers.local_time(transition.inserted_at)}</span>
+          <span
+            :if={
+              @expanded and transition.source == :staff and transition.to in [:delivering, :completed] and
+                transition.reason
+            }
+            class="min-w-0 break-words"
+          >{transition.reason}</span>
         </li>
       </ol>
     </article>
@@ -867,6 +881,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
 
   attr :order, :map, required: true
   attr :current_staff, :map, required: true
+  attr :delivery, :map, default: nil
   attr :last, :map, default: nil
   attr :crm_managed, :boolean, required: true
 
@@ -874,10 +889,17 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
     %{order: order, current_staff: staff} = assigns
     # The card already resolved the integration gate. Domain actions recheck the saved order.
     control_order = if assigns.crm_managed, do: order, else: %{order | crm: nil}
+    next = if assigns.crm_managed, do: nil, else: NextStep.for_order(control_order, staff)
+
+    tracked_step? =
+      assigns.delivery != nil and order.fulfillment_type == :delivery and
+        match?({to, _} when to in [:delivering, :completed], next)
 
     assigns =
       assign(assigns,
-        next: if(assigns.crm_managed, do: nil, else: NextStep.for_order(control_order, staff)),
+        next: if(tracked_step?, do: nil, else: next),
+        manual_step:
+          if(tracked_step? and Identity.can?(staff, "orders.update"), do: elem(next, 0)),
         can_cancel:
           not assigns.crm_managed and OrderFlow.can?(control_order, :cancelled, {:staff, staff}),
         can_revert:
@@ -914,6 +936,25 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
     >
       <.icon name="hero-arrow-right-circle" class="size-4" /> {elem(@next, 1)}
     </button>
+    <details :if={@manual_step} class="w-full">
+      <summary class="btn btn-sm btn-outline">
+        {manual_delivery_label(@manual_step)}
+      </summary>
+      <form
+        id={"order-manual-delivery-#{@order.id}"}
+        phx-submit="confirm_delivery_step"
+        class="mt-2 flex flex-wrap items-end gap-2"
+      >
+        <input type="hidden" name="order_id" value={@order.id} />
+        <input type="hidden" name="delivery_id" value={@delivery.id} />
+        <input type="hidden" name="to" value={@manual_step} />
+        <label>
+          <span class="block text-sm">{gettext("Reason for manual confirmation")}</span>
+          <input type="text" name="reason" class="input input-sm" required maxlength="300" />
+        </label>
+        <button type="submit" class="btn btn-sm btn-primary">{gettext("Confirm")}</button>
+      </form>
+    </details>
     <button
       :if={@can_cancel}
       type="button"
@@ -940,6 +981,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
 
   attr :order, :map, required: true
   attr :delivery, :map, default: nil
+  attr :yandex_claim, :map, default: nil
   attr :couriers, :list, default: []
   attr :estimable, :boolean, default: false
   attr :own_couriers_enabled, :boolean, default: false
@@ -960,6 +1002,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
     >
       <.icon name="hero-truck" class="size-4 text-base-content/50" />
       <span
+        :if={is_nil(@yandex_claim)}
         id={"order-delivery-state-#{@order.id}"}
         class={["badge badge-sm font-medium", delivery_badge(@delivery)]}
       >
@@ -968,7 +1011,11 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
       <span :if={@delivery && @delivery.courier} class="font-medium">
         {@delivery.courier.name || @delivery.courier.login}
       </span>
-      <.yandex_courier :if={@delivery && @delivery.provider == :yandex} delivery={@delivery} />
+      <.yandex_courier
+        :if={@yandex_claim}
+        delivery={@yandex_claim}
+        show_contact={@order.status not in [:completed, :cancelled]}
+      />
       <span
         :if={is_nil(@delivery) and provider_failed?(@order)}
         id={"order-delivery-failed-#{@order.id}"}
@@ -1107,6 +1154,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   defp located(_address), do: nil
 
   attr :delivery, :map, required: true
+  attr :show_contact, :boolean, required: true
 
   defp yandex_courier(assigns) do
     assigns =
@@ -1116,28 +1164,36 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
       )
 
     ~H"""
-    <span class="badge badge-sm badge-ghost">{gettext("Yandex")}</span>
-    <span :if={@details["performer"]} id={"order-yandex-courier-#{@delivery.order_id}"}>
+    <span id={"order-yandex-claim-state-#{@delivery.order_id}"} class="badge badge-sm badge-ghost">
+      {gettext("Yandex claim: %{status}", status: yandex_claim_label(@details["status"]))}
+    </span>
+    <span
+      :if={@show_contact and @details["performer"]}
+      id={"order-yandex-courier-#{@delivery.order_id}"}
+    >
       <span class="font-medium">{@details["performer"]["name"]}</span>
       <span :if={@details["performer"]["car"]} class="text-base-content/60">
         · {@details["performer"]["car"]}
       </span>
     </span>
     <a
-      :if={@details["phone"]}
+      :if={@show_contact and @details["phone"]}
       href={"tel:#{@details["phone"]}"}
       class="link link-hover inline-flex items-center gap-1"
     >
       <.icon name="hero-phone" class="size-3.5" /> {courier_phone(@details["phone"])}
     </a>
-    <span :if={eta = point_eta(@details)} id={"order-yandex-eta-#{@delivery.order_id}"}>
+    <span
+      :if={eta = @show_contact && point_eta(@details)}
+      id={"order-yandex-eta-#{@delivery.order_id}"}
+    >
       {gettext("arrives by %{time}", time: OrderHelpers.local_time(eta))}
     </span>
     <span :if={@details["price"]} class="text-base-content/60">
       {@details["price"]} ₽
     </span>
     <a
-      :if={@details["tracking_url"]}
+      :if={@show_contact and @details["tracking_url"]}
       href={@details["tracking_url"]}
       target="_blank"
       rel="noopener"
@@ -1146,13 +1202,42 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
       {gettext("Tracking")}
     </a>
     <span
-      :if={@returning}
+      :if={@show_contact and @returning and @details["status"] != "returned_finish"}
       id={"order-yandex-returning-#{@delivery.order_id}"}
       class="badge badge-sm badge-error"
     >
       {gettext("The courier is bringing the order back")}
     </span>
     """
+  end
+
+  defp manual_delivery_label(:delivering), do: gettext("Confirm pickup manually")
+  defp manual_delivery_label(:completed), do: gettext("Confirm delivery manually")
+
+  defp yandex_claim(_order, %{provider: :yandex} = delivery), do: delivery
+
+  defp yandex_claim(%{status: :completed, deliveries: deliveries}, nil)
+       when is_list(deliveries) do
+    case List.last(deliveries) do
+      %{provider: :yandex} = delivery -> delivery
+      _ -> nil
+    end
+  end
+
+  defp yandex_claim(_order, _delivery), do: nil
+
+  defp yandex_claim_label(status) do
+    case YandexDelivery.state(status) do
+      :searching -> gettext("Looking for a courier")
+      :assigned -> gettext("Courier assigned")
+      :picked_up -> gettext("Courier is on the way")
+      :delivered -> gettext("Delivered")
+      :lost -> gettext("Courier not found")
+      :failed -> gettext("Delivery failed")
+      :cancelled -> gettext("Cancelled")
+      :returning -> gettext("Returning to the restaurant")
+      :returned_finished -> gettext("Returned to the restaurant")
+    end
   end
 
   defp courier_phone(phone) do

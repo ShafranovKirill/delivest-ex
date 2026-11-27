@@ -9,6 +9,7 @@ defmodule Delivest.Couriers do
   alias Delivest.Identity.Branch.{BranchInfo, CourierSettings}
   alias Delivest.Gateway
   alias Delivest.Oms.{Order, OrderFlow, Orders}
+  alias Delivest.Oms.Orders.Notifier
   alias Delivest.Payments.Payment
 
   @permission "orders.deliver"
@@ -16,6 +17,7 @@ defmodule Delivest.Couriers do
   @rank %{preparing: 1, ready: 2}
   @handed_over [:picked_up, :delivered]
   @lost_limit 3
+  @reporting {__MODULE__, :reporting}
 
   def permission, do: @permission
 
@@ -310,11 +312,56 @@ defmodule Delivest.Couriers do
   def hand_over(%Staff{} = courier, branch_id, delivery_id),
     do: move(courier, branch_id, delivery_id, :picked_up, :completed)
 
-  def report(%Delivery{id: id}, state, details) do
-    case Repo.get(Delivery, id) do
+  def report(%Delivery{id: id, order_id: order_id}, state, details) do
+    previous = Repo.get(Delivery, id)
+    outer_transaction? = Repo.in_transaction?()
+
+    result = report_transaction(order_id, id, state, details)
+
+    case result do
+      {:ok, delivery} = success ->
+        if not outer_transaction? && previous &&
+             (previous.status != delivery.status ||
+                Map.delete(previous.details || %{}, "synced_at") !=
+                  Map.delete(delivery.details || %{}, "synced_at")),
+           do: broadcast(success, delivery.branch_id)
+
+        success
+
+      error ->
+        error
+    end
+  end
+
+  def publish_report(%Delivery{} = delivery),
+    do: broadcast({:ok, delivery}, delivery.branch_id)
+
+  defp report_transaction(order_id, id, state, details) do
+    Process.put(@reporting, true)
+
+    order_transaction(fn ->
+      if order_id, do: Repo.one(from o in Order, where: o.id == ^order_id, lock: "FOR UPDATE")
+      delivery = Repo.one(from d in Delivery, where: d.id == ^id, lock: "FOR UPDATE")
+      report_locked(delivery, state, details) |> unwrap()
+    end)
+  after
+    Process.delete(@reporting)
+  end
+
+  defp order_transaction(fun),
+    do: Notifier.with_commit_notifications(fn -> Repo.transaction(fun) end)
+
+  defp report_locked(delivery, state, details) do
+    case delivery do
       %Delivery{} = delivery ->
         if Delivery.active?(delivery) do
-          action = fn -> delivery |> put_details(details) |> reported(state) end
+          action = fn ->
+            if stale_provider_state?(delivery, state, details) do
+              {:ok, delivery}
+            else
+              delivery |> put_details(details) |> reported_safely(state)
+            end
+          end
 
           if delivery.provider == :staff and state == :lost do
             case with_own_couriers(delivery.branch_id, action) do
@@ -333,14 +380,50 @@ defmodule Delivest.Couriers do
     end
   end
 
+  defp reported_safely(%Delivery{details: %{"manual_delivered" => true}} = delivery, state) do
+    if state == :delivered,
+      do: finish(delivery, :delivered, nil),
+      else:
+        if(state in [:failed, :cancelled, :lost, :returned_finished],
+          do: finish(delivery, :failed, :provider_error),
+          else: {:ok, delivery}
+        )
+  end
+
+  defp reported_safely(%Delivery{status: :picked_up} = delivery, state)
+       when state in [:lost, :failed, :cancelled, :returned_finished],
+       do: finish(delivery, :failed, :provider_error)
+
+  defp reported_safely(delivery, :returned_finished),
+    do: finish(delivery, :failed, :provider_error)
+
+  defp reported_safely(delivery, state), do: reported(delivery, state)
+
+  defp stale_provider_state?(%Delivery{provider: :yandex, details: known}, state, incoming) do
+    case {known["provider_revision"], incoming["provider_revision"]} do
+      {old, new} when is_integer(old) and is_integer(new) and old != new ->
+        old > new
+
+      _ ->
+        known["status"]
+        |> Delivest.Integrations.YandexDelivery.state()
+        |> provider_stage()
+        |> Kernel.>(provider_stage(state))
+    end
+  end
+
+  defp stale_provider_state?(_delivery, _state, _details), do: false
+
+  defp provider_stage(:searching), do: 0
+  defp provider_stage(:assigned), do: 1
+  defp provider_stage(:picked_up), do: 2
+  defp provider_stage(:returning), do: 4
+  defp provider_stage(:returned_finished), do: 5
+  defp provider_stage(_terminal), do: 3
+
   defp put_details(delivery, details) do
     merged = Map.merge(delivery.details, details)
-    updated = delivery |> Delivery.provider_changeset(%{details: merged}) |> Repo.update!()
-
-    if Map.delete(merged, "synced_at") != Map.delete(delivery.details, "synced_at"),
-      do: broadcast({:ok, updated}, updated.branch_id)
-
-    updated
+    delivery |> Delivery.provider_changeset(%{details: merged}) |> Repo.update!()
   end
 
   defp reported(%Delivery{status: :searching} = delivery, state)
@@ -368,7 +451,12 @@ defmodule Delivest.Couriers do
   end
 
   defp reported(%Delivery{status: :picked_up} = delivery, :delivered) do
-    with {:ok, _order} <- advance(delivery, :completed), do: {:ok, Repo.reload!(delivery)}
+    with {:ok, %Order{status: :completed}} <- advance(delivery, :completed) do
+      delivery |> Repo.reload!() |> Delivery.close_changeset(:delivered, nil) |> Repo.update()
+    else
+      {:ok, _order} -> {:ok, Repo.reload!(delivery)}
+      error -> error
+    end
   end
 
   defp reported(%Delivery{} = delivery, :lost) do
@@ -400,13 +488,42 @@ defmodule Delivest.Couriers do
 
   defp move(courier, branch_id, delivery_id, from, to) do
     with :ok <- Identity.authorize(courier, @permission, branch_id),
-         {:ok, delivery} <- fetch(branch_id, delivery_id),
-         true <- mine?(delivery, courier, from) || {:error, :not_yours},
-         %Order{} = order <- Repo.get(Order, delivery.order_id) || {:error, :order_not_found} do
-      case Orders.advance_order(order, to, {:courier, courier}) do
-        {:ok, order} -> order_moved(order)
-        {:error, :skipped_step} -> {:error, :not_ready}
-        error -> error
+         {:ok, delivery} <- fetch(branch_id, delivery_id) do
+      order_transaction(fn ->
+        order =
+          Repo.one(from o in Order, where: o.id == ^delivery.order_id, lock: "FOR UPDATE") ||
+            Repo.rollback(:order_not_found)
+
+        current =
+          Repo.one(from d in Delivery, where: d.id == ^delivery.id, lock: "FOR UPDATE")
+
+        if not mine?(current, courier, from), do: Repo.rollback(:not_yours)
+
+        case Orders.advance_order(order, to, {:courier, courier}) do
+          {:ok, order} ->
+            updated =
+              case to do
+                :delivering -> Delivery.pick_up_changeset(current)
+                :completed -> Delivery.close_changeset(current, :delivered, nil)
+              end
+              |> Repo.update!()
+
+            {order, updated}
+
+          {:error, :skipped_step} ->
+            Repo.rollback(:not_ready)
+
+          {:error, reason} ->
+            Repo.rollback(reason)
+        end
+      end)
+      |> case do
+        {:ok, {order, updated}} ->
+          broadcast({:ok, updated}, branch_id)
+          order_moved(order)
+
+        {:error, reason} ->
+          {:error, reason}
       end
     end
   end
@@ -559,7 +676,7 @@ defmodule Delivest.Couriers do
 
   def give_up(%Delivery{} = delivery) do
     if Delivery.active?(delivery),
-      do: close(delivery, :failed, :provider_error),
+      do: report(delivery, :failed, %{}),
       else: {:ok, delivery}
   end
 
@@ -585,6 +702,7 @@ defmodule Delivest.Couriers do
   defp complete_active(order_id) do
     case active(order_id) do
       nil -> :ok
+      %Delivery{provider: :yandex, details: %{"manual_delivered" => true}} -> :ok
       %Delivery{status: :searching} = delivery -> close(delivery, :cancelled, :order_completed)
       delivery -> close(delivery, :delivered, nil)
     end
@@ -756,8 +874,16 @@ defmodule Delivest.Couriers do
   defp changed(error), do: error
 
   defp broadcast({:ok, value} = result, branch_id) do
-    Phoenix.PubSub.broadcast(Delivest.PubSub, topic(branch_id), {:deliveries_changed, branch_id})
-    with %Delivery{order_id: order_id} <- value, do: Orders.courier_changed(order_id)
+    unless Process.get(@reporting) do
+      Phoenix.PubSub.broadcast(
+        Delivest.PubSub,
+        topic(branch_id),
+        {:deliveries_changed, branch_id}
+      )
+
+      with %Delivery{order_id: order_id} <- value, do: Orders.courier_changed(order_id)
+    end
+
     result
   end
 

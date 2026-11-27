@@ -148,4 +148,13 @@ defmodule DelivestWeb.Staff.CourierLive.IndexTest do
     conn = init_test_session(build_conn(), %{"staff_id" => operator.id})
     assert {:error, {:redirect, _}} = page(conn, ctx.branch)
   end
+
+  test "a courier loses access to delivery actions when their permission is revoked", ctx do
+    {:ok, lv, _html} = page(ctx.conn, ctx.branch)
+    role = Repo.preload(ctx.courier, :role).role
+    role |> Ecto.Changeset.change(permissions: []) |> Repo.update!()
+
+    assert lv |> element("#take-#{ctx.delivery.id}") |> render_click() =~ "Permission denied"
+    assert Repo.reload!(ctx.delivery).status == :searching
+  end
 end

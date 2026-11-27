@@ -12,6 +12,7 @@ defmodule Delivest.Integrations.YandexDelivery do
   alias Delivest.Integrations.{Error, Poller, StaffAccess}
   alias Delivest.Integrations.YandexDelivery.{Api, Claim, ClaimLookupWorker, Journal, Settings}
   alias Delivest.Oms.{Order, Orders}
+  alias Delivest.Oms.Orders.Notifier
 
   @searching ~w(new estimating ready_for_approval accepted performer_lookup performer_draft)
   @assigned ~w(performer_found pickup_arrived ready_for_pickup_confirmation)
@@ -87,6 +88,7 @@ defmodule Delivest.Integrations.YandexDelivery do
   def state(status) when status in @assigned, do: :assigned
   def state(status) when status in @picked_up, do: :picked_up
   def state("delivered_finish"), do: :delivered
+  def state("returned_finish"), do: :returned_finished
   def state(status) when status in @lost, do: :lost
   def state(status) when status in @failed, do: :failed
   def state(status) when status in @cancelled, do: :cancelled
@@ -304,22 +306,29 @@ defmodule Delivest.Integrations.YandexDelivery do
   end
 
   defp report_finished_claim(delivery, claim, details) do
+    Notifier.with_commit_notifications(fn -> finish_claim(delivery, claim, details) end)
+    |> case do
+      {:ok, updated} -> Couriers.publish_report(updated)
+      error -> error
+    end
+  end
+
+  defp finish_claim(delivery, claim, details) do
     Repo.transaction(fn ->
       case Couriers.report(delivery, :delivered, details) do
-        {:ok, updated} ->
+        {:ok, %Delivery{status: :delivered, details: %{"status" => "delivered_finish"}} = updated} ->
           case record_actual(delivery, claim) do
             {:error, reason} -> Repo.rollback(reason)
-            _ -> {:ok, updated}
+            _ -> updated
           end
+
+        {:ok, updated} ->
+          updated
 
         {:error, reason} ->
           Repo.rollback(reason)
       end
     end)
-    |> case do
-      {:ok, result} -> result
-      error -> error
-    end
   end
 
   defp record_actual(delivery, claim) do
@@ -357,6 +366,8 @@ defmodule Delivest.Integrations.YandexDelivery do
   defp details(claim) do
     %{
       "status" => claim["status"],
+      "provider_revision" => claim["revision"],
+      "provider_updated_ts" => claim["updated_ts"],
       "price" => price(claim["pricing"]),
       "eta" => claim["eta"],
       "performer" => performer(claim["performer_info"]),

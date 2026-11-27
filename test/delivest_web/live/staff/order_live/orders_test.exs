@@ -5,6 +5,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
   import Delivest.Factory
 
   alias Delivest.Features.Settings
+  alias Delivest.Couriers.Delivery
   alias Delivest.Identity.Branch.{BranchInfo, CourierSettings}
   alias Delivest.Integrations.Crm.BranchSettings
   alias Delivest.Oms.Order
@@ -354,6 +355,97 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
       end
 
       refute has_element?(lv, "#order-next-#{order.id}")
+    end
+
+    test "the restaurant can hand off and complete its own delivery without a claim", %{
+      conn: conn,
+      branch: branch,
+      order: order
+    } do
+      order
+      |> Ecto.Changeset.change(fulfillment_type: :delivery, status: :ready)
+      |> Repo.update!()
+
+      {:ok, lv, _} =
+        live(
+          login(conn, ["orders.read", "orders.update"], branch),
+          ~p"/staff/b/#{branch}/orders/#{order.id}"
+        )
+
+      for status <- [:delivering, :completed] do
+        refute has_element?(lv, "#order-manual-delivery-#{order.id}")
+        lv |> element("#order-next-#{order.id}") |> render_click()
+        assert Repo.reload!(order).status == status
+      end
+    end
+
+    test "an operator confirms both delivery steps while the Yandex claim remains separate", %{
+      conn: conn,
+      branch: branch,
+      order: order
+    } do
+      order
+      |> Ecto.Changeset.change(fulfillment_type: :delivery, status: :ready)
+      |> Repo.update!()
+
+      delivery =
+        Repo.insert!(%Delivery{
+          branch_id: branch.id,
+          order_id: order.id,
+          provider: :yandex,
+          external_id: "claim-id",
+          status: :assigned,
+          details: %{"status" => "performer_found"}
+        })
+
+      {:ok, lv, _} =
+        live(
+          login(conn, ["orders.read", "orders.update"], branch),
+          ~p"/staff/b/#{branch}/orders/#{order.id}"
+        )
+
+      form_id = "#order-manual-delivery-#{order.id}"
+      claim_id = "#order-yandex-claim-state-#{order.id}"
+      refute has_element?(lv, "#order-next-#{order.id}")
+      assert has_element?(lv, claim_id, "Courier assigned")
+
+      assert lv |> form(form_id, reason: "  ") |> render_submit() =~ "Enter a reason"
+      assert Repo.reload!(order).status == :ready
+
+      lv |> form(form_id, reason: "  Called the courier  ") |> render_submit()
+      assert Repo.reload!(order).status == :delivering
+      assert has_element?(lv, claim_id, "Courier assigned")
+
+      lv |> form(form_id, reason: "Customer confirmed") |> render_submit()
+      assert Repo.reload!(order).status == :completed
+      refute has_element?(lv, form_id)
+      assert has_element?(lv, claim_id, "Courier assigned")
+
+      assert [
+               %{
+                 to: :delivering,
+                 source: :staff,
+                 staff_id: author,
+                 reason: "Called the courier",
+                 inserted_at: %DateTime{}
+               },
+               %{
+                 to: :completed,
+                 source: :staff,
+                 staff_id: author,
+                 reason: "Customer confirmed",
+                 inserted_at: %DateTime{}
+               }
+             ] = Repo.preload(Repo.reload!(order), :transitions).transitions
+
+      assert is_binary(author)
+      assert has_element?(lv, "#order-history-#{order.id}", "Customer confirmed")
+
+      assert {:ok, _} =
+               Delivest.Couriers.report(delivery, :picked_up, %{"status" => "pickuped"})
+
+      assert eventually(fn -> has_element?(lv, claim_id, "Courier is on the way") end)
+      assert Repo.reload!(order).status == :completed
     end
 
     test "an order opens in the side panel", %{conn: conn, branch: branch, order: order} do
