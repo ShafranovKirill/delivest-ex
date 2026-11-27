@@ -27,6 +27,58 @@
   column-gap: .5rem;
 }
 
+.order-card-overview-section {
+  min-width: 0;
+}
+
+.order-card-section-title {
+  margin-bottom: .625rem;
+  color: var(--color-base-content);
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+#shown-order .order-card-overview-section {
+  padding: 1rem;
+  border: 1px solid var(--color-base-300);
+  border-radius: var(--radius-box);
+  background: var(--color-base-100);
+}
+
+#shown-order .order-card-overview-section .order-card-items {
+  display: grid;
+  gap: .5rem;
+}
+
+#shown-order .order-card-detail-section {
+  margin: .75rem 1rem;
+  padding: 1rem;
+  border: 1px solid var(--color-base-300);
+  border-radius: var(--radius-box);
+  background: var(--color-base-100);
+}
+
+#shown-order .order-card-detail-section > :is(ul, ol) {
+  padding: 0;
+  border: 0;
+}
+
+#orders .order-card-number {
+  letter-spacing: -.02em;
+}
+
+#orders .order-card-footer {
+  background: color-mix(in srgb, var(--color-base-100) 85%, var(--color-base-200));
+}
+
+#orders .order-card-footer :is(button, a, select):focus-visible,
+#orders-filters :is(input, select, summary, button, a):focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 .order-card-print-menu {
   position: absolute;
   top: calc(100% + .25rem);
@@ -101,6 +153,8 @@ article:has(> .order-card-header .order-card-printer[open]) {
   grid-template-columns: minmax(0, 1fr) minmax(7rem, 10rem) minmax(8rem, 11rem) auto auto auto;
   align-items: start;
   background: var(--color-base-100);
+  border-color: var(--color-base-300);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-base-content) 5%, transparent);
 }
 
 #orders-page:fullscreen #orders-filters {

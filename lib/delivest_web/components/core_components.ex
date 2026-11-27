@@ -812,7 +812,12 @@ defmodule DelivestWeb.CoreComponents do
         ]}>
           <div class="p-6 border-b border-base-300 flex items-center justify-between shrink-0">
             <h2 class="text-xl font-display font-bold">{@title}</h2>
-            <button type="button" class="btn btn-ghost btn-square btn-sm" phx-click={@on_close}>
+            <button
+              type="button"
+              class="btn btn-ghost btn-square btn-sm"
+              phx-click={@on_close}
+              aria-label={gettext("Close")}
+            >
               <.icon name="hero-x-mark" class="size-5" />
             </button>
           </div>

@@ -645,7 +645,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
         </.link>
       </div>
 
-      <div id="orders" phx-update="stream" class="space-y-3">
+      <div id="orders" phx-update="stream" phx-hook=".OrdersReturnContext" class="space-y-3">
         <div id="orders-empty" class="hidden only:block">
           <.empty_state title={gettext("No orders here yet")} class="py-16" />
         </div>
@@ -720,6 +720,56 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
         on_cancel={JS.push("cancel_delete")}
         on_confirm={JS.push("confirm_delete")}
       />
+
+      <script :type={Phoenix.LiveView.ColocatedHook} name=".OrdersReturnContext">
+        export default {
+          mounted() {
+            this.returnContext = null
+            this.page = this.el.closest('#orders-page')
+            this.drawerOpen = this.drawerIsOpen()
+            this.onOpen = (event) => {
+              if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey ||
+                  event.shiftKey || event.altKey || !(event.target instanceof Element)) return
+              const link = event.target.closest('[id^="order-view-"]')
+              if (!link || !this.el.contains(link)) return
+
+              const fullscreen = this.page.matches(':fullscreen')
+              this.returnContext = {
+                id: link.id,
+                fullscreen,
+                scrollTop: fullscreen ? this.page.scrollTop : window.scrollY
+              }
+            }
+            this.el.addEventListener('click', this.onOpen)
+            if (this.drawerOpen) this.focusDrawerClose()
+          },
+          updated() {
+            const open = this.drawerIsOpen()
+            if (open && !this.drawerOpen) this.focusDrawerClose()
+            if (!open && this.drawerOpen && this.returnContext) {
+              const context = this.returnContext
+              this.returnContext = null
+              requestAnimationFrame(() => {
+                if (context.fullscreen) this.page.scrollTop = context.scrollTop
+                else window.scrollTo(0, context.scrollTop)
+                document.getElementById(context.id)?.focus({ preventScroll: true })
+              })
+            }
+            this.drawerOpen = open
+          },
+          destroyed() {
+            this.el.removeEventListener('click', this.onOpen)
+          },
+          drawerIsOpen() {
+            return this.page.querySelector('#order-slideover-toggle')?.checked === true
+          },
+          focusDrawerClose() {
+            requestAnimationFrame(() => {
+              this.page.querySelector('#order-slideover-toggle + .drawer-side button')?.focus()
+            })
+          }
+        }
+      </script>
     </div>
     """
   end
