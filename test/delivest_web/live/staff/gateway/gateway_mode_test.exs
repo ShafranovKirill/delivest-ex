@@ -59,11 +59,21 @@ defmodule DelivestWeb.Staff.GatewayModeTest do
       refute has_element?(lv, "#gateway-badge")
     end
 
-    test "the integrations page lists who runs what", %{conn: conn, branch: branch} do
-      {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/integrations")
+    test "the integrations card leads read-only staff to route ownership", %{
+      conn: conn,
+      branch: branch
+    } do
+      {:ok, overview, _html} = live(conn, ~p"/staff/b/#{branch}/integrations")
+
+      {:ok, lv, _html} =
+        overview
+        |> element("#integration-routes")
+        |> render_click()
+        |> follow_redirect(conn, ~p"/staff/b/#{branch}/integrations/routes")
 
       assert has_element?(lv, "#gateway-area-kitchen", "iiko")
       assert has_element?(lv, "#gateway-area-menu", "Delivest")
+      assert has_element?(lv, "#route-toggle-app[disabled]")
     end
 
     test "a direct visit keeps past receipts visible and blocks CRM-owned queues", %{
