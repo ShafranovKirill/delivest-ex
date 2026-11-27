@@ -195,7 +195,7 @@
 .table-leading-actions:not(:has(tbody tr td:first-child input[type="checkbox"])) tbody tr td[data-column="actions"] { left: 0; }
 .staff-header { left: 0; height: var(--staff-header-height); }
 .staff-header {
-  background-color: var(--color-base-100);
+  background-color: var(--staff-workspace-surface, var(--color-base-100));
 }
 .staff-header #header-sidebar-toggle,
 .staff-header .staff-branch-trigger,
