@@ -26,6 +26,9 @@ defmodule Delivest.Integrations.Yookassa.Api do
   def get_refund(%Settings{} = settings, id),
     do: Client.get("/refunds/#{id}", [], options(settings))
 
+  def list_refunds(%Settings{} = settings, params),
+    do: Client.get("/refunds", params, options(settings))
+
   def list_payments(%Settings{} = settings, params),
     do: Client.get("/payments", params, options(settings))
 
@@ -33,7 +36,7 @@ defmodule Delivest.Integrations.Yookassa.Api do
     %{value: format(kopecks), currency: "RUB"}
   end
 
-  def parse_amount(%{"value" => value}) when is_binary(value) do
+  def parse_amount(%{"value" => value, "currency" => "RUB"}) when is_binary(value) do
     Money.parse(value)
   end
 

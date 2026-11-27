@@ -364,6 +364,8 @@ defmodule Delivest.Payments do
         order_id: payment.order_id,
         amount: amount,
         status: if(instant?, do: :succeeded, else: :pending),
+        provider:
+          if(payment.method == :online and payment.provider == "yookassa", do: "yookassa"),
         refunded_at: if(instant?, do: DateTime.utc_now(:second)),
         refunded_by_id: staff_id(by)
       })

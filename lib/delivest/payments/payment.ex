@@ -13,7 +13,8 @@ defmodule Delivest.Payments.Payment do
   @moves %{
     pending: [:authorized, :paid, :failed, :cancelled],
     authorized: [:paid, :cancelled, :failed],
-    paid: [:pending]
+    paid: [:pending],
+    cancelled: [:paid]
   }
 
   @primary_key {:id, :binary_id, autogenerate: true}

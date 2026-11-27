@@ -9,6 +9,7 @@ defmodule Delivest.Oms.Orders.StatusChange do
   alias Delivest.Identity.Staff
   alias Delivest.Oms.{Order, OrderEvents, OrderFlow, OrderLock, OrderTransition}
   alias Delivest.Oms.Orders.Notifier
+  alias Delivest.Payments.Payment
   alias Ecto.Multi
 
   def run(%Order{} = order, to, by, opts \\ []) do
@@ -25,7 +26,8 @@ defmodule Delivest.Oms.Orders.StatusChange do
   def apply(repo, %Order{} = order, to, by, opts \\ []) do
     case OrderFlow.steps(order, to, by) do
       {:ok, steps} ->
-        with {:ok, delivery} <- manual_delivery(repo, order, steps, by, opts),
+        with :ok <- check_online_payment(repo, order, steps),
+             {:ok, delivery} <- manual_delivery(repo, order, steps, by, opts),
              opts <- normalize_manual_reason(opts, delivery),
              {:ok, change} <- persist(repo, order, steps, by, opts),
              :ok <- confirm_delivery(repo, delivery, steps) do
@@ -186,6 +188,40 @@ defmodule Delivest.Oms.Orders.StatusChange do
       order -> {:ok, order}
     end
   end
+
+  defp check_online_payment(repo, %Order{payment_method: :online, channel: nil} = order, steps) do
+    if Enum.any?(steps, fn {_from, to} -> to in [:delivering, :completed] end) do
+      payments =
+        repo.all(
+          from(p in Payment,
+            where: p.order_id == ^order.id and p.method == :online and p.provider == "yookassa",
+            where: p.status == :paid and not is_nil(p.paid_at),
+            preload: :refunds
+          )
+        )
+
+      net =
+        Enum.reduce(payments, 0, fn payment, total ->
+          refunded =
+            payment.refunds
+            |> Enum.filter(&(&1.status == :succeeded))
+            |> Enum.map(& &1.amount)
+            |> Enum.sum()
+
+          total + payment.amount - refunded
+        end)
+
+      cond do
+        payments == [] -> {:error, :online_payment_not_captured}
+        net == order.total_amount -> :ok
+        true -> {:error, :online_payment_amount_mismatch}
+      end
+    else
+      :ok
+    end
+  end
+
+  defp check_online_payment(_repo, _order, _steps), do: :ok
 
   defp persist(repo, order, steps, by, opts) do
     if Enum.any?(steps, fn {_from, to} -> to == :completed end),

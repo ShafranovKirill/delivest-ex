@@ -8445,6 +8445,9 @@ msgstr "Не оплачен вовремя"
 msgid "The order is waiting for the online payment"
 msgstr "Заказ ждёт онлайн-оплаты"
 
+msgid "Wait for YooKassa to confirm payment, then try again."
+msgstr "Дождитесь подтверждения оплаты от ЮKassa и повторите действие."
+
 #: lib/delivest_web/live/staff/integration_live/presentation.ex:392
 #, elixir-autogen, elixir-format
 msgid "Payments differ from YooKassa: %{count}"
@@ -14206,3 +14209,11 @@ msgstr "Удалить вариант"
 
 msgid "Add option"
 msgstr "Добавить вариант"
+
+#: lib/delivest_web/live/staff/order_live/orders.ex
+msgid "Refund the YooKassa payment first. The receipt is issued after confirmation."
+msgstr "Сначала оформите возврат оплаты через ЮKassa. Чек сформируется после подтверждения возврата."
+
+#: lib/delivest_web/live/staff/order_live/status_errors.ex
+msgid "The YooKassa payment amount differs from the order total. Check the payment and refunds in the order."
+msgstr "Сумма оплаты ЮKassa не совпадает с итогом заказа. Проверьте оплату и возвраты в заказе."

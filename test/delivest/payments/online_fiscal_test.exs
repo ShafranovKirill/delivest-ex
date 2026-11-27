@@ -7,12 +7,14 @@ defmodule Delivest.Payments.OnlineFiscalTest do
 
   alias Delivest.Fiscal
   alias Delivest.Fiscal.BranchSettings
+  alias Delivest.Fiscal.RefundWorker
   alias Delivest.Identity.Branch
   alias Delivest.Identity.Branch.{BranchInfo, PaymentSettings}
   alias Delivest.Integrations.{AtolOnline, Health, Yookassa}
   alias Delivest.Oms.{Order, Orders}
   alias Delivest.Payments
   alias Delivest.Payments.Online
+  alias Delivest.Payments.Refund
   alias Delivest.Repo
 
   setup %{conn: conn} do
@@ -109,11 +111,17 @@ defmodule Delivest.Payments.OnlineFiscalTest do
         })
 
       String.ends_with?(path, "/refunds") ->
-        Req.Test.json(conn, %{"id" => "refund-1", "status" => "pending", "amount" => rub("3.00")})
+        Req.Test.json(conn, %{
+          "id" => "refund-1",
+          "payment_id" => "pay-1",
+          "status" => "pending",
+          "amount" => rub("3.00")
+        })
 
       String.contains?(path, "/refunds/") ->
         Req.Test.json(conn, %{
           "id" => "refund-1",
+          "payment_id" => "pay-1",
           "status" => "succeeded",
           "amount" => rub("3.00")
         })
@@ -193,36 +201,73 @@ defmodule Delivest.Payments.OnlineFiscalTest do
              Fiscal.list(ctx.order.id)
   end
 
-  test "completing the order prints the final receipt that offsets the prepayment", ctx do
+  defp capture_before_receipt(ctx) do
     {:ok, _} = accept(ctx)
-    drain()
-    _ = sell_bodies()
+    Delivest.DataCase.deliver_events()
+    Oban.drain_queue(queue: :payments, with_safety: false)
+    Delivest.DataCase.deliver_events()
+    assert [prepayment = %{stage: :full_prepayment, status: :pending}] = Fiscal.list(ctx.order.id)
+    prepayment
+  end
 
+  test "completing the order prints the final receipt that offsets the prepayment", ctx do
+    prepayment = capture_before_receipt(ctx)
     {:ok, _} = Orders.advance_order(Repo.get!(Order, ctx.order.id), :completed, :system)
+
+    event =
+      Enum.find(
+        Delivest.Events.list("order", ctx.order.id),
+        &match?(%{type: "order.status_changed", payload: %{"to" => "completed"}}, &1)
+      )
+
+    assert event
+    assert {:error, :prepayment_receipt_pending} = Fiscal.OrderSubscriber.handle(event)
+    assert {:ok, %{status: :done}} = Fiscal.register(prepayment)
+    _ = sell_bodies()
     drain()
 
-    assert [%{stage: :full_prepayment}, %{kind: :sell, stage: :full_payment, amount: 300}] =
+    assert [%{stage: :full_prepayment}, final = %{kind: :sell, stage: :full_payment, amount: 300}] =
              Fiscal.list(ctx.order.id)
 
     assert [%{"receipt" => receipt}] = sell_bodies()
     assert [%{"payment_method" => "full_payment"}] = receipt["items"]
     assert [%{"type" => 2, "sum" => 3}] = receipt["payments"]
-  end
-
-  test "a refund prints a refund receipt", ctx do
-    {:ok, _} = accept(ctx)
-    drain()
-    assert [%{kind: :sell, stage: :full_prepayment, status: :done}] = Fiscal.list(ctx.order.id)
-    _ = sell_bodies()
 
     [payment] = Payments.list(ctx.order.id)
-    {:ok, _} = Payments.refund(payment, 300)
+    {:ok, refund} = Payments.refund(payment, 300)
     drain()
     assert {:ok, _} = Online.sync_refund("refund-1")
     drain()
 
-    assert [_prepayment, %{kind: :sell_refund, stage: :full_prepayment, amount: 300}] =
+    assert Enum.any?(Fiscal.list(ctx.order.id), fn receipt ->
+             receipt.refund_of_id == final.id and receipt.payment_refund_id == refund.id
+           end)
+  end
+
+  test "a refund prints a refund receipt", ctx do
+    sale = capture_before_receipt(ctx)
+
+    [payment] = Payments.list(ctx.order.id)
+    {:ok, refund} = Payments.refund(payment, 300)
+    Oban.drain_queue(queue: :default, with_safety: false)
+    assert {:ok, _} = Online.sync_refund("refund-1")
+    assert {:ok, _} = Online.sync_refund("refund-1")
+    refund_job = %Oban.Job{args: %{"refund_id" => refund.id}}
+    assert {:snooze, 300} = RefundWorker.perform(refund_job)
+    assert [_sale] = Fiscal.list(ctx.order.id)
+    assert {:ok, sale} = Fiscal.register(sale)
+    assert {:error, :refund_online_payment} = Fiscal.refund(sale, ctx.staff)
+    _ = sell_bodies()
+    drain()
+
+    assert :ok = RefundWorker.perform(refund_job)
+
+    assert [_prepayment, %{kind: :sell_refund, stage: :full_prepayment, amount: 300} = receipt] =
              Fiscal.list(ctx.order.id)
+
+    assert receipt.payment_refund_id == refund.id
+    assert [%{"external_id" => external_id}] = sell_bodies()
+    assert external_id == receipt.id
   end
 
   test "cancelling a captured order refunds it", ctx do
@@ -237,5 +282,26 @@ defmodule Delivest.Payments.OnlineFiscalTest do
     drain()
 
     assert [%{refunds: [%{amount: 300}]}] = Payments.list(ctx.order.id)
+  end
+
+  test "separate confirmed partial refunds have separate receipts", ctx do
+    sale = capture_before_receipt(ctx)
+    assert {:ok, %{status: :done}} = Fiscal.register(sale)
+    [payment] = Payments.list(ctx.order.id)
+
+    for amount <- [100, 200] do
+      assert {:ok, refund} = Payments.refund(payment, amount)
+      refund |> Refund.move_changeset(:succeeded) |> Repo.update!()
+
+      assert {:ok, receipt} = Fiscal.issue_online_refund(refund.id)
+      assert receipt.amount == amount
+      assert receipt.payment_refund_id == refund.id
+      assert {:ok, nil} = Fiscal.issue_online_refund(refund.id)
+    end
+
+    assert Fiscal.list(ctx.order.id)
+           |> Enum.filter(&(&1.kind == :sell_refund))
+           |> Enum.map(& &1.amount)
+           |> Enum.sort() == [100, 200]
   end
 end

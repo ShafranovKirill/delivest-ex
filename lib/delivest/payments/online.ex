@@ -38,10 +38,11 @@ defmodule Delivest.Payments.Online do
 
   def apply_remote(%{"id" => id, "status" => status} = remote) when is_binary(id) do
     Repo.transaction(fn ->
-      with %Payment{} = payment <- locked(id),
-           :ok <- check_amount(payment, remote),
-           %Order{} = order <- Repo.get!(Order, payment.order_id),
-           {:ok, changed} <- move(order, payment, status) do
+      with %Payment{} = found <- Repo.get_by(Payment, provider: "yookassa", external_id: id),
+           %Order{} = order <- locked_order(found.order_id),
+           %Payment{} = payment <- locked(id),
+           {:ok, amount} <- check_amount(payment, remote),
+           {:ok, changed} <- move(order, payment, status, amount) do
         {order, changed}
       else
         nil -> Repo.rollback(:payment_not_found)
@@ -68,7 +69,12 @@ defmodule Delivest.Payments.Online do
       description: refund.reason
     }
 
-    with {:ok, remote} <- Api.create_refund(Yookassa.get_settings(), refund.id, body),
+    body =
+      if refund.provider == "yookassa",
+        do: Map.put(body, :metadata, %{refund_id: refund.id}),
+        else: body
+
+    with {:ok, remote} <- fetch_or_create_refund(refund, body),
          {:ok, _refund} <- apply_refund(refund, remote) do
       :ok
     end
@@ -85,81 +91,153 @@ defmodule Delivest.Payments.Online do
     end
   end
 
+  defp fetch_or_create_refund(%Refund{external_id: id}, _body) when is_binary(id),
+    do: Api.get_refund(Yookassa.get_settings(), id)
+
+  defp fetch_or_create_refund(refund, body) do
+    if DateTime.diff(DateTime.utc_now(), refund.inserted_at, :second) < 86_400 do
+      Api.create_refund(Yookassa.get_settings(), refund.id, body)
+    else
+      if refund.provider == "yookassa",
+        do: reconcile_refund(refund, body.payment_id, nil, MapSet.new()),
+        else: {:error, :refund_outcome_unknown}
+    end
+  end
+
+  defp reconcile_refund(refund, payment_id, cursor, seen) do
+    params =
+      if cursor, do: [payment_id: payment_id, cursor: cursor], else: [payment_id: payment_id]
+
+    with {:ok, %{"items" => items} = page} <- Api.list_refunds(Yookassa.get_settings(), params) do
+      case Enum.find(items, &(get_in(&1, ["metadata", "refund_id"]) == refund.id)) do
+        nil ->
+          case page["next_cursor"] do
+            cursor when is_binary(cursor) ->
+              cond do
+                MapSet.member?(seen, cursor) -> {:error, :refund_cursor_cycle}
+                MapSet.size(seen) >= 49 -> {:error, :refund_scan_incomplete}
+                true -> reconcile_refund(refund, payment_id, cursor, MapSet.put(seen, cursor))
+              end
+
+            _ ->
+              {:error, :refund_outcome_unknown}
+          end
+
+        remote ->
+          {:ok, remote}
+      end
+    end
+  end
+
   defp apply_refund(
-         %Refund{status: :pending} = refund,
+         %Refund{} = refund,
          %{"id" => id, "status" => status} = remote
-       ) do
-    case status do
-      "succeeded" ->
-        with :ok <- check_refund_amount(refund, remote) do
-          refund
-          |> Refund.move_changeset(:succeeded, %{
-            external_id: id,
-            refunded_at: DateTime.utc_now(:second)
-          })
-          |> Ecto.Changeset.put_change(:provider, "yookassa")
-          |> Repo.update()
-          |> tap(&refund_receipt/1)
-        end
+       )
+       when is_binary(id) and status in ["pending", "succeeded", "canceled"] do
+    Repo.transaction(fn ->
+      _order = locked_order(refund.order_id) || Repo.rollback(:order_not_found)
 
-      "canceled" ->
-        refund
-        |> Refund.move_changeset(:failed, %{external_id: id})
-        |> Ecto.Changeset.put_change(:provider, "yookassa")
-        |> Repo.update()
+      _payment =
+        Repo.one!(from(p in Payment, where: p.id == ^refund.payment_id, lock: "FOR UPDATE"))
 
-      _pending ->
-        refund
-        |> Ecto.Changeset.change(external_id: id, provider: "yookassa")
-        |> Repo.update()
+      locked = Repo.one!(from(r in Refund, where: r.id == ^refund.id, lock: "FOR UPDATE"))
+
+      with :ok <- check_refund_identity(locked, remote),
+           {:ok, changed} <- move_refund(locked, id, status) do
+        changed
+      else
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    end)
+  end
+
+  defp apply_refund(_refund, _remote), do: {:error, :bad_response}
+
+  defp move_refund(%Refund{status: status} = refund, _id, _remote_status)
+       when status != :pending,
+       do: {:ok, refund}
+
+  defp move_refund(refund, id, "succeeded") do
+    with {:ok, refund} <-
+           refund
+           |> Refund.move_changeset(:succeeded, %{
+             external_id: id,
+             refunded_at: DateTime.utc_now(:second)
+           })
+           |> Ecto.Changeset.put_change(:provider, "yookassa")
+           |> Repo.update(),
+         :ok <- Fiscal.enqueue_online_refund(refund) do
+      {:ok, refund}
     end
   end
 
-  defp apply_refund(%Refund{} = refund, _remote), do: {:ok, refund}
+  defp move_refund(refund, id, "canceled") do
+    refund
+    |> Refund.move_changeset(:failed, %{external_id: id})
+    |> Ecto.Changeset.put_change(:provider, "yookassa")
+    |> Repo.update()
+  end
 
-  defp refund_receipt({:ok, %Refund{} = refund}) do
+  defp move_refund(refund, id, "pending") do
+    refund
+    |> Ecto.Changeset.change(external_id: id, provider: "yookassa")
+    |> Ecto.Changeset.force_change(:updated_at, DateTime.utc_now(:second))
+    |> Repo.update()
+  end
+
+  defp check_refund_identity(refund, remote) do
     payment = Repo.get!(Payment, refund.payment_id)
-    order = Repo.get!(Order, refund.order_id)
 
-    case Fiscal.refund_online(order, payment, refund.amount) do
-      {:ok, _receipt} ->
+    cond do
+      refund.external_id && refund.external_id != remote["id"] ->
+        {:error, :refund_id_mismatch}
+
+      remote["payment_id"] != payment.external_id ->
+        {:error, :payment_mismatch}
+
+      Api.parse_amount(remote["amount"]) != {:ok, refund.amount} ->
+        {:error, :amount_mismatch}
+
+      true ->
         :ok
-
-      {:error, :not_own} ->
-        :ok
-
-      {:error, reason} ->
-        Logger.error("refund receipt of order #{order.number} failed: #{inspect(reason)}")
-    end
-  end
-
-  defp refund_receipt(_result), do: :ok
-
-  defp check_refund_amount(refund, remote) do
-    case Api.parse_amount(remote["amount"]) do
-      {:ok, amount} when amount == refund.amount -> :ok
-      _other -> {:error, :amount_mismatch}
     end
   end
 
   def capture(%Order{} = order, %Payment{status: :authorized, external_id: id} = payment)
       when is_binary(id) do
-    with {:ok, remote} <-
-           Api.capture(Yookassa.get_settings(), key(payment, "capture"), id, payment.amount),
-         {:ok, _changed} <- apply_remote(remote) do
+    settings = Yookassa.get_settings()
+
+    case Api.capture(settings, key(payment, "capture"), id, payment.amount) do
+      {:ok, remote} ->
+        finish_capture(order, id, remote)
+
+      {:error, reason} ->
+        case Api.get_payment(settings, id) do
+          {:ok, %{"status" => "succeeded"} = remote} -> finish_capture(order, id, remote)
+          _ -> {:error, reason}
+        end
+    end
+  end
+
+  def capture(_order, _payment), do: :ok
+
+  defp finish_capture(order, id, %{"id" => id, "status" => "succeeded"} = remote) do
+    with {:ok, _changed} <- apply_remote(remote) do
       Logger.info("yookassa payment #{id} of order #{order.number} was captured")
       :ok
     end
   end
 
-  def capture(_order, _payment), do: :ok
+  defp finish_capture(_order, _id, _remote), do: {:error, :capture_not_confirmed}
 
   def release(%Payment{external_id: id, details: details} = payment) when is_binary(id) do
     if details["released"] do
       :ok
     else
       with {:ok, remote} <- Api.get_payment(Yookassa.get_settings(), id) do
-        release(payment, remote["status"])
+        if remote["status"] == "succeeded",
+          do: apply_remote(remote) |> release_result(),
+          else: release(payment, remote["status"])
       end
     end
   end
@@ -184,6 +262,9 @@ defmodule Delivest.Payments.Online do
     :ok
   end
 
+  defp release_result({:ok, _changed}), do: :ok
+  defp release_result(error), do: error
+
   defp mark_released(payment) do
     with {:ok, _payment} <-
            payment
@@ -195,16 +276,30 @@ defmodule Delivest.Payments.Online do
 
   defp key(%Payment{id: id}, action), do: id <> ":" <> action
 
-  defp move(order, %Payment{status: :pending} = payment, "waiting_for_capture") do
+  defp move(order, %Payment{status: :pending} = payment, "waiting_for_capture", _amount) do
     with {:ok, _payment} <- Payments.advance(Repo, order, payment, :authorized, :system),
          {:ok, _order} <- open_to_work(order) do
       {:ok, :authorized}
     end
   end
 
-  defp move(order, %Payment{status: status} = payment, "succeeded")
+  defp move(
+         %Order{status: :cancelled} = order,
+         %Payment{status: status} = payment,
+         "succeeded",
+         amount
+       )
+       when status in [:pending, :authorized, :cancelled, :paid] do
+    with {:ok, payment} <- record_capture(order, payment, amount),
+         {:ok, _refund} <- refund_cancelled(payment) do
+      {:ok, :refunded_paid}
+    end
+  end
+
+  defp move(order, %Payment{status: status} = payment, "succeeded", amount)
        when status in [:pending, :authorized] do
-    with {:ok, _payment} <-
+    with {:ok, payment} <- payment |> Ecto.Changeset.change(amount: amount) |> Repo.update(),
+         {:ok, _payment} <-
            Payments.advance(Repo, order, payment, :paid, :system, %{
              paid_at: DateTime.utc_now(:second),
              fiscalized_by: if(order.crm, do: :crm)
@@ -214,18 +309,42 @@ defmodule Delivest.Payments.Online do
     end
   end
 
-  defp move(order, %Payment{status: status} = payment, "canceled")
+  defp move(order, %Payment{status: status} = payment, "canceled", _amount)
        when status in [:pending, :authorized] do
     with {:ok, _payment} <- Payments.advance(Repo, order, payment, :cancelled, :system) do
       {:ok, if(order.awaiting_payment, do: :abandoned, else: :cancelled)}
     end
   end
 
-  defp move(_order, %Payment{status: status} = payment, "waiting_for_capture")
+  defp move(_order, %Payment{status: status} = payment, "waiting_for_capture", _amount)
        when status in [:cancelled, :failed],
        do: {:ok, {:late_hold, payment}}
 
-  defp move(_order, _payment, _status), do: {:ok, :unchanged}
+  defp move(_order, _payment, _status, _amount), do: {:ok, :unchanged}
+
+  defp record_capture(_order, %Payment{status: :paid} = payment, amount) do
+    if payment.amount == amount,
+      do: {:ok, payment},
+      else: {:error, :amount_mismatch}
+  end
+
+  defp record_capture(order, payment, amount) do
+    with {:ok, payment} <- payment |> Ecto.Changeset.change(amount: amount) |> Repo.update(),
+         {:ok, payment} <-
+           Payments.advance(Repo, order, payment, :paid, :system, %{
+             paid_at: DateTime.utc_now(:second),
+             fiscalized_by: if(order.crm, do: :crm)
+           }) do
+      {:ok, payment}
+    end
+  end
+
+  defp refund_cancelled(payment) do
+    case Payments.refund_left(payment) do
+      left when left > 0 -> Payments.refund(payment, left, %{reason: "order cancelled"})
+      _ -> {:ok, nil}
+    end
+  end
 
   defp open_to_work(%Order{awaiting_payment: true} = order) do
     with {:ok, order} <- order |> Ecto.Changeset.change(awaiting_payment: false) |> Repo.update(),
@@ -266,8 +385,18 @@ defmodule Delivest.Payments.Online do
         else: get_in(payment.details, ["hold_amount"]) || payment.amount
 
     case Api.parse_amount(remote["amount"]) do
-      {:ok, ^expected} ->
-        :ok
+      {:ok, amount} when amount > 0 ->
+        if remote["status"] == "succeeded" do
+          if amount != expected,
+            do:
+              Logger.warning(
+                "yookassa payment #{payment.external_id} captured #{amount}, expected #{expected}"
+              )
+
+          {:ok, amount}
+        else
+          if amount == expected, do: {:ok, amount}, else: {:error, :amount_mismatch}
+        end
 
       other ->
         Logger.error(
@@ -285,6 +414,10 @@ defmodule Delivest.Payments.Online do
         lock: "FOR UPDATE"
       )
     )
+  end
+
+  defp locked_order(order_id) do
+    Repo.one(from(o in Order, where: o.id == ^order_id, lock: "FOR UPDATE"))
   end
 
   defp create(order, payment) do

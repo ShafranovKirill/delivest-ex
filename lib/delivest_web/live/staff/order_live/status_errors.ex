@@ -19,6 +19,15 @@ defmodule DelivestWeb.Staff.OrderLive.StatusErrors do
   def message(:order_locked), do: gettext("The order is managed by the CRM")
   def message(:awaiting_payment), do: gettext("The order is waiting for the online payment")
 
+  def message(:online_payment_not_captured),
+    do: gettext("Wait for YooKassa to confirm payment, then try again.")
+
+  def message(:online_payment_amount_mismatch),
+    do:
+      gettext(
+        "The YooKassa payment amount differs from the order total. Check the payment and refunds in the order."
+      )
+
   def message(:paid),
     do: gettext("The payment is already handed over or receipted, refund it before reverting")
 

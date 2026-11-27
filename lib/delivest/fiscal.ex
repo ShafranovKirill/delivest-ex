@@ -4,12 +4,13 @@ defmodule Delivest.Fiscal do
   require Logger
 
   alias Delivest.{Audit, Identity, Repo}
-  alias Delivest.Fiscal.{BranchSettings, Builder, PollWorker, Receipt, RegisterWorker, Registry}
+  alias Delivest.Fiscal.{BranchSettings, Builder, PollWorker, Receipt, RefundWorker}
+  alias Delivest.Fiscal.{RegisterWorker, Registry}
   alias Delivest.Identity.Branch
   alias Delivest.Integrations.StaffAccess
   alias Delivest.Net.Product
   alias Delivest.Oms.Order
-  alias Delivest.Payments.Payment
+  alias Delivest.Payments.{Payment, Refund}
 
   @poll_seconds 300
   @max_retries 3
@@ -208,6 +209,7 @@ defmodule Delivest.Fiscal do
         branch_id: order.branch_id,
         payment_ids: payment_ids,
         refund_of_id: opts[:refund_of_id],
+        payment_refund_id: opts[:payment_refund_id],
         issued_by_id: opts[:staff_id],
         kind: built.kind,
         stage: built.stage,
@@ -218,29 +220,58 @@ defmodule Delivest.Fiscal do
     end
   end
 
-  def refund_online(%Order{} = order, %Payment{} = payment, amount) do
-    sale =
-      Repo.one(
-        from(r in Receipt,
-          where: r.order_id == ^order.id and r.kind == :sell and r.status == :done,
-          order_by: [desc: r.stage],
-          limit: 1
-        )
+  def enqueue_online_refund(%Refund{id: id}) do
+    with {:ok, _job} <- %{"refund_id" => id} |> RefundWorker.new() |> Oban.insert(), do: :ok
+  end
+
+  def issue_online_refund(refund_id) do
+    Repo.transaction(fn ->
+      refund = Repo.one(from(r in Refund, where: r.id == ^refund_id, lock: "FOR UPDATE"))
+
+      cond do
+        not match?(%Refund{status: :succeeded}, refund) ->
+          nil
+
+        Repo.exists?(from(r in Receipt, where: r.payment_refund_id == ^refund_id)) ->
+          nil
+
+        true ->
+          case refund_online(refund) do
+            {:ok, receipt} -> receipt
+            {:error, reason} -> Repo.rollback(reason)
+          end
+      end
+    end)
+  end
+
+  defp refund_online(%Refund{} = refund) do
+    order = Repo.get!(Order, refund.order_id)
+    payment = Repo.get!(Payment, refund.payment_id)
+
+    sales =
+      from(r in Receipt,
+        where: r.order_id == ^order.id and r.kind == :sell and ^payment.id in r.payment_ids,
+        limit: 1
       )
 
-    case sale do
+    stage = if order.status == :completed, do: :full_payment, else: :full_prepayment
+
+    case Repo.one(from(r in sales, where: r.status == :done and r.stage == ^stage)) do
       nil ->
-        {:ok, nil}
+        if Repo.exists?(sales) or own_online_receipts?(order),
+          do: {:error, :sale_receipt_pending},
+          else: {:ok, nil}
 
       %Receipt{} = sale ->
         if existing_sale?(sale, order) and payment.order_id == order.id do
           do_issue(
             order,
-            [%{payment | amount: amount}],
+            [%{payment | amount: refund.amount}],
             [
               kind: :sell_refund,
               stage: sale.stage,
               refund_of_id: sale.id,
+              payment_refund_id: refund.id,
               payment_ids: [payment.id]
             ],
             true
@@ -250,6 +281,13 @@ defmodule Delivest.Fiscal do
         end
     end
   end
+
+  defp own_online_receipts?(%Order{channel: nil, crm: nil, branch_id: branch_id}) do
+    match?(%BranchSettings{enabled: true, mode: :own}, settings(branch_id)) and
+      globally_enabled?()
+  end
+
+  defp own_online_receipts?(_order), do: false
 
   def retry(%Receipt{status: :fail} = receipt, staff) do
     if StaffAccess.allowed?(:atol), do: retry_enabled(receipt, staff), else: {:error, :disabled}
@@ -266,6 +304,7 @@ defmodule Delivest.Fiscal do
       branch_id: receipt.branch_id,
       payment_ids: receipt.payment_ids,
       refund_of_id: receipt.refund_of_id,
+      payment_refund_id: receipt.payment_refund_id,
       issued_by_id: staff.id,
       kind: receipt.kind,
       stage: receipt.stage,
@@ -305,10 +344,17 @@ defmodule Delivest.Fiscal do
   def refund(%Receipt{kind: :sell, status: :done} = receipt, staff) do
     order = Repo.get!(Order, receipt.order_id)
 
-    if existing_sale?(receipt, order) do
-      do_refund(receipt, staff, order)
-    else
-      {:error, :not_refundable}
+    cond do
+      not existing_sale?(receipt, order) ->
+        {:error, :not_refundable}
+
+      Repo.exists?(
+        from(p in Payment, where: p.id in ^receipt.payment_ids and p.provider == "yookassa")
+      ) ->
+        {:error, :refund_online_payment}
+
+      true ->
+        do_refund(receipt, staff, order)
     end
   end
 
@@ -391,21 +437,34 @@ defmodule Delivest.Fiscal do
     |> Repo.update()
   end
 
-  def apply_result(receipt, result, opts \\ [])
+  def apply_result(%Receipt{id: id}, result, opts \\ []) do
+    Repo.transaction(fn ->
+      receipt = Repo.one!(from(r in Receipt, where: r.id == ^id, lock: "FOR UPDATE"))
 
-  def apply_result(%Receipt{status: status} = receipt, _result, _opts)
-      when status in [:done, :fail],
-      do: {:ok, receipt}
+      case apply_locked_result(receipt, result, opts) do
+        {:ok, updated} -> updated
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    end)
+  end
 
-  def apply_result(%Receipt{retries: retries} = receipt, %{status: :fail, retriable: true}, _opts)
-      when retries < @max_retries,
-      do:
-        if(StaffAccess.allowed?(:atol),
-          do: reregister(receipt),
-          else: receipt |> Receipt.result_changeset(%{status: :fail}) |> Repo.update()
-        )
+  defp apply_locked_result(%Receipt{status: status} = receipt, _result, _opts)
+       when status in [:done, :fail],
+       do: {:ok, receipt}
 
-  def apply_result(%Receipt{} = receipt, result, opts) do
+  defp apply_locked_result(
+         %Receipt{retries: retries} = receipt,
+         %{status: :fail, retriable: true},
+         _opts
+       )
+       when retries < @max_retries,
+       do:
+         if(StaffAccess.allowed?(:atol),
+           do: reregister(receipt),
+           else: receipt |> Receipt.result_changeset(%{status: :fail}) |> Repo.update()
+         )
+
+  defp apply_locked_result(%Receipt{} = receipt, result, opts) do
     with {:ok, updated} <- receipt |> Receipt.result_changeset(result) |> Repo.update() do
       if updated.status != :wait or Keyword.get(opts, :poll, true), do: after_result(updated)
       {:ok, updated}
@@ -430,6 +489,9 @@ defmodule Delivest.Fiscal do
               n.order_id == parent_as(:receipt).order_id and
                 (n.kind == parent_as(:receipt).kind or
                    (n.kind == :sell_correction and parent_as(:receipt).kind == :sell)),
+            where:
+              (is_nil(parent_as(:receipt).payment_refund_id) and is_nil(n.payment_refund_id)) or
+                n.payment_refund_id == parent_as(:receipt).payment_refund_id,
             where:
               n.status in [:pending, :wait, :done] and
                 n.inserted_at > parent_as(:receipt).inserted_at

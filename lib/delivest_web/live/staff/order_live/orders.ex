@@ -500,8 +500,19 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
          {:ok, _receipt} <- action.(receipt, Identity.fresh_staff(socket.assigns.current_staff)) do
       load(socket)
     else
-      {:error, :forbidden} = error -> failed(socket, error)
-      _error -> socket |> put_flash(:error, gettext("Failed to issue the receipt")) |> load()
+      {:error, :forbidden} = error ->
+        failed(socket, error)
+
+      {:error, :refund_online_payment} ->
+        socket
+        |> put_flash(
+          :error,
+          gettext("Refund the YooKassa payment first. The receipt is issued after confirmation.")
+        )
+        |> load()
+
+      _error ->
+        socket |> put_flash(:error, gettext("Failed to issue the receipt")) |> load()
     end
   end
 
