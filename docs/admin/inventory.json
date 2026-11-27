@@ -7763,7 +7763,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:911",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:913",
       "target_section": "Menu"
     },
     {

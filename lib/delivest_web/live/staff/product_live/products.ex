@@ -848,7 +848,9 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
 
           <:col :let={{_id, prod}} label={gettext("Status")}>
             <%= if prod.is_active do %>
-              <span class="product-status badge badge-sm whitespace-nowrap" data-active="true">{gettext("Active")}</span>
+              <span class="product-status badge badge-sm whitespace-nowrap" data-active="true">{gettext(
+                "Active"
+              )}</span>
             <% else %>
               <span class="product-status badge badge-sm whitespace-nowrap" data-active="false">{gettext(
                 "Inactive"
