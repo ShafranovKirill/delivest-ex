@@ -36,10 +36,8 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     assert has_element?(lv, "#statistics-filter option[value=month][selected]")
     assert has_element?(lv, "#statistics-sales-detail")
 
-    assert has_element?(
-             lv,
-             ~s{#statistics-heatmap-link[href*="tab=overview"][href$="#statistics-heatmap"]}
-           )
+    refute has_element?(lv, "#statistics-heatmap-link")
+    assert has_element?(lv, "#statistics-heatmap-chart[data-chart]")
 
     refute has_element?(lv, "#statistics-sales-tabs")
     assert has_element?(lv, "#statistics-chart-revenue")
@@ -61,6 +59,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     assert has_element?(lv, "#statistics-chart-orders-plot[data-chart]")
     assert has_element?(lv, "#statistics-chart-avg_check-plot[data-chart]")
     assert has_element?(lv, "#statistics-chart-revenue-plot table td[data-series=selected]")
+    assert has_element?(lv, "#statistics-sales-charts + #statistics-heatmap")
     assert has_element?(lv, "#statistics-top-products", "Хинкали")
     assert has_element?(lv, "#statistics-top-categories", "Горячее")
     assert has_element?(lv, "#statistics-order-source", "Storefront")
@@ -70,6 +69,31 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
 
     html = render_patch(lv, ~p"/staff/b/#{branch}/statistics?tab=categories&period=today")
     assert html =~ "Горячее"
+  end
+
+  test "sales heatmap filters independent complete weeks and opens a cell detail", %{conn: conn} do
+    {conn, branch} = login(conn, ["statistics.read"])
+    {_, to} = Delivest.Analytics.OrderHeatmap.default_period({:branch, branch.id})
+    {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/statistics")
+
+    view
+    |> element("#statistics-heatmap-filter")
+    |> render_change(%{
+      "heatmap_from" => Date.to_iso8601(Date.add(to, -55)),
+      "heatmap_to" => Date.to_iso8601(to),
+      "fulfillment" => "pickup"
+    })
+
+    assert_patch(view)
+    assert has_element?(view, "#statistics-sales-detail")
+
+    assert has_element?(
+             view,
+             "#statistics-heatmap-filter select[name=fulfillment] option[value=pickup][selected]"
+           )
+
+    view |> element("#statistics-heatmap-data tbody tr:first-child button") |> render_click()
+    assert has_element?(view, "#statistics-heatmap-detail tbody tr")
   end
 
   test "overview heatmap changes fulfillment and lazily opens zero-date details", %{conn: conn} do
