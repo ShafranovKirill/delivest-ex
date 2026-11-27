@@ -6,6 +6,7 @@ const parseLayout = (el) => {
 
 const widthColumns = (width, editing) =>
   width < 640 ? 2 : width < (editing && window.innerWidth >= 1280 ? 680 : 1100) ? 6 : 12;
+const kpiWidgetIds = new Set(["revenue", "orders", "avg_check", "in_work"]);
 // Interactive changes use free cells only. Layout loading and content sizing
 // still use GridStack's normal collision handling.
 class DashboardGridEngine extends GridStackEngine {
@@ -20,13 +21,16 @@ class DashboardGridEngine extends GridStackEngine {
   }
 }
 
-const mobileHeight = (item, editing, el, extraNarrow) => {
+const mobileHeight = (item, editing, el, extraNarrow, width) => {
   if (item.id === "attention") return editing ? 3 : 2;
   if (item.id === "quick_actions") {
     const actions = el.querySelectorAll(".dashboard-action-link").length;
     return editing || extraNarrow || actions > 4 ? 3 : 2;
   }
-  return ({ revenue: 3, orders: 3, avg_check: 3, in_work: 3 })[item.id] || item.h;
+  if (kpiWidgetIds.has(item.id)) {
+    return editing || width < 400 ? 3 : 2;
+  }
+  return item.h;
 };
 
 export const DashboardGrid = {
@@ -166,7 +170,7 @@ export const DashboardGrid = {
     let halfRowHeight = 0;
     this.grid.batchUpdate();
     for (const { item, el } of this.orderedVisible()) {
-      const isKpi = ["revenue", "orders", "avg_check", "in_work"].includes(item.id);
+      const isKpi = kpiWidgetIds.has(item.id);
       const w = isKpi ? 3 : 6;
       const h = item.id === "quick_actions" && el.querySelectorAll(".dashboard-action-link").length > 4
         ? Math.max(3, item.h) : item.h;
@@ -194,8 +198,8 @@ export const DashboardGrid = {
     let halfRowHeight = 0;
     this.grid.batchUpdate();
     for (const { item, el } of this.orderedVisible()) {
-      const h = mobileHeight(item, this.editing, el, this.extraNarrow);
-      const isKpi = ["revenue", "orders", "avg_check", "in_work"].includes(item.id);
+      const h = mobileHeight(item, this.editing, el, this.extraNarrow, this.container.clientWidth);
+      const isKpi = kpiWidgetIds.has(item.id);
       if (isKpi) {
         this.grid.update(el, { x: halfRowHeight ? 1 : 0, y, w: 1, h, minW: 1, maxW: 2 });
         if (halfRowHeight) {

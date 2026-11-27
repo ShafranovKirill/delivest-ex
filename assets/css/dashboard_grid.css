@@ -89,6 +89,7 @@ a.dashboard-attention-label:hover { color: var(--color-primary); opacity: 1; tex
 .dashboard-latest-row:hover { background: var(--color-base-200); }
 .dashboard-latest-row:last-child { border-bottom: 0; }
 .dashboard-kpi-card { display: flex; flex-direction: column; justify-content: flex-start; gap: .45rem; }
+#dashboard-grid:not(.dashboard-grid-editing) .dashboard-kpi-card { justify-content: space-between; }
 .dashboard-kpi-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: .5rem; min-width: 0; color: color-mix(in srgb, var(--color-base-content) 70%, transparent); font-size: .875rem; line-height: 1.25; font-weight: 500; }
 .dashboard-kpi-heading > span { min-width: 0; }
 .dashboard-kpi-icon { flex: none; margin-left: auto; color: color-mix(in srgb, var(--color-base-content) 55%, transparent); }
