@@ -8,14 +8,21 @@ defmodule DelivestWeb.Staff.SubsectionNavigation do
 
   def subsection_navigation(assigns) do
     ~H"""
-    <ul :if={@sidebar && @entries != []} id={@id} phx-hook="ActiveSectionNav" aria-label={@label}>
+    <ul
+      :if={@sidebar && @entries != []}
+      id={@id}
+      phx-hook="ActiveSectionNav"
+      aria-label={@label}
+      class="staff-sidebar-submenu"
+    >
       <li :for={entry <- @entries}>
         <.link
           id={entry.id}
           navigate={entry.path}
+          title={entry.label}
           class={entry.active && "menu-active"}
           aria-current={entry.active && "page"}
-        >{entry.label}</.link>
+        ><span class="min-w-0 truncate">{entry.label}</span></.link>
       </li>
     </ul>
     <nav
