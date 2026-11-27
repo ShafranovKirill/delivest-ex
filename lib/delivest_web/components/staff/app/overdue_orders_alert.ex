@@ -13,8 +13,6 @@ defmodule DelivestWeb.OverdueOrdersAlert do
       :if={@orders != []}
       id="overdue-orders"
       class="modal modal-open"
-      phx-hook="Alarm"
-      data-count={length(@orders)}
     >
       <div class="modal-box max-w-lg border border-error/40">
         <h3 class="flex items-center gap-2 text-lg font-bold text-error">

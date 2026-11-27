@@ -1,5 +1,6 @@
 defmodule DelivestWeb.Staff.DeliveryLive.Zones do
   use DelivestWeb, :live_view
+  import DelivestWeb.Staff.FoundationComponents, only: [form_section: 1]
 
   alias Delivest.{Delivery, Identity, Money}
   alias Delivest.Delivery.Conditions
@@ -77,13 +78,14 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
          socket
          |> assign_settings(settings)
          |> put_flash(:info, gettext("Settings saved"))
-         |> push_event("staff:form-saved", %{})}
+         |> push_event("staff:form-saved", %{id: "delivery-settings"})}
 
       {:error, reason} ->
         {:noreply,
          socket
          |> assign_settings_form(params)
-         |> put_flash(:error, error_message(reason))}
+         |> put_flash(:error, error_message(reason))
+         |> push_event("staff:form-failed", %{id: "delivery-settings"})}
     end
   end
 
@@ -186,13 +188,19 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
          |> reload_zones(zone.id)
          |> push_zones()
          |> put_flash(:info, gettext("Zone saved"))
-         |> push_event("staff:form-saved", %{})}
+         |> push_event("staff:form-saved", %{id: "delivery-zone-form"})}
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, zone_form: to_form(changeset, as: "zone"))}
+        {:noreply,
+         socket
+         |> assign(zone_form: to_form(changeset, as: "zone"))
+         |> push_event("staff:form-failed", %{id: "delivery-zone-form"})}
 
       {:error, reason} ->
-        {:noreply, put_flash(socket, :error, error_message(reason))}
+        {:noreply,
+         socket
+         |> put_flash(:error, error_message(reason))
+         |> push_event("staff:form-failed", %{id: "delivery-zone-form"})}
     end
   end
 
@@ -347,67 +355,70 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
         data-staff-dirty
         class="space-y-4 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6"
       >
-        <div>
-          <h2 class="text-lg font-semibold">{gettext("Delivery time")}</h2>
-          <p class="text-sm text-base-content/70">
-            {gettext(
+        <.form_section
+          id="delivery-time-section"
+          title={gettext("Delivery time")}
+          description={
+            gettext(
               "Choose the time shown to customers. Kitchen details are configured in branch Order timing."
+            )
+          }
+        >
+          <div class="flex flex-wrap gap-5">
+            <label class="flex cursor-pointer items-center gap-2">
+              <input
+                id="delivery-timing-fixed"
+                type="radio"
+                name="order_timing[mode]"
+                value="fixed"
+                checked={@timing_params["mode"] == "fixed"}
+                class="radio radio-primary radio-sm"
+                disabled={not @can_edit}
+              />
+              {gettext("One delivery time")}
+            </label>
+            <label class="flex cursor-pointer items-center gap-2">
+              <input
+                id="delivery-timing-calculated"
+                type="radio"
+                name="order_timing[mode]"
+                value="calculated"
+                checked={@timing_params["mode"] == "calculated"}
+                class="radio radio-primary radio-sm"
+                disabled={not @can_edit}
+              />
+              {gettext("Calculated time")}
+            </label>
+          </div>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <.input
+              field={@timing_form[:fixed_delivery_minutes]}
+              type="number"
+              min="1"
+              max="600"
+              label={gettext("Full delivery time, minutes")}
+              disabled={not @can_edit}
+            />
+            <.input
+              field={@timing_form[:travel_minutes]}
+              type="number"
+              min="1"
+              max="600"
+              label={gettext("Courier travel time, minutes")}
+              disabled={not @can_edit}
+            />
+          </div>
+          <p class="text-sm text-base-content/60">
+            {gettext(
+              "In calculated mode, courier time runs from the order being ready to handover. A zone may have its own courier time."
             )}
           </p>
-        </div>
-        <div class="flex flex-wrap gap-5">
-          <label class="flex cursor-pointer items-center gap-2">
-            <input
-              id="delivery-timing-fixed"
-              type="radio"
-              name="order_timing[mode]"
-              value="fixed"
-              checked={@timing_params["mode"] == "fixed"}
-              class="radio radio-primary radio-sm"
-              disabled={not @can_edit}
-            />
-            {gettext("One delivery time")}
-          </label>
-          <label class="flex cursor-pointer items-center gap-2">
-            <input
-              id="delivery-timing-calculated"
-              type="radio"
-              name="order_timing[mode]"
-              value="calculated"
-              checked={@timing_params["mode"] == "calculated"}
-              class="radio radio-primary radio-sm"
-              disabled={not @can_edit}
-            />
-            {gettext("Calculated time")}
-          </label>
-        </div>
-        <div class="grid gap-4 sm:grid-cols-2">
-          <.input
-            field={@timing_form[:fixed_delivery_minutes]}
-            type="number"
-            min="1"
-            max="600"
-            label={gettext("Full delivery time, minutes")}
-            disabled={not @can_edit}
-          />
-          <.input
-            field={@timing_form[:travel_minutes]}
-            type="number"
-            min="1"
-            max="600"
-            label={gettext("Courier travel time, minutes")}
-            disabled={not @can_edit}
-          />
-        </div>
-        <p class="text-sm text-base-content/60">
-          {gettext(
-            "In calculated mode, courier time runs from the order being ready to handover. A zone may have its own courier time."
-          )}
-        </p>
+        </.form_section>
         <div :if={@can_edit} class="flex justify-end">
           <button
             id="delivery-timing-save"
             type="submit"
+            data-staff-save="edit"
             class="btn btn-primary"
             phx-disable-with={gettext("Saving...")}
           >{gettext("Save")}</button>
@@ -419,82 +430,84 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
         phx-change="mode"
         data-staff-dirty
         phx-submit="save_settings"
-        class="space-y-4 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6"
+        class="space-y-4 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6 [&_fieldset]:min-w-0 [&_.label]:whitespace-normal [&_.label-text]:whitespace-normal"
       >
-        <div class="flex flex-wrap gap-2">
-          <label
-            :for={{value, label} <- mode_options()}
-            class="flex cursor-pointer items-center gap-2"
-          >
-            <input
-              type="radio"
-              name="delivery[mode]"
-              value={value}
-              checked={to_string(@mode) == value}
-              class="radio radio-primary radio-sm"
-              disabled={not @can_edit}
-            />
-            <span>{label}</span>
-          </label>
-        </div>
+        <.form_section id="delivery-price-section" title={gettext("Settings")}>
+          <div class="flex flex-wrap gap-2">
+            <label
+              :for={{value, label} <- mode_options()}
+              class="flex cursor-pointer items-center gap-2"
+            >
+              <input
+                type="radio"
+                name="delivery[mode]"
+                value={value}
+                checked={to_string(@mode) == value}
+                class="radio radio-primary radio-sm"
+                disabled={not @can_edit}
+              />
+              <span>{label}</span>
+            </label>
+          </div>
 
-        <p :if={@manual_address and @mode == :zones} class="text-sm text-base-content/70">
-          {gettext(
-            "Manual addresses use the branch's flat delivery price. Your zones stay saved for map mode."
-          )}
-        </p>
-        <div :if={@mode == :flat or @manual_address} class="space-y-2">
-          <p class="text-sm text-base-content/60">
+          <p :if={@manual_address and @mode == :zones} class="text-sm text-base-content/70">
             {gettext(
-              "One price for any address. Leave the price empty for free delivery, set «free from» for free delivery from a sum."
+              "Manual addresses use the branch's flat delivery price. Your zones stay saved for map mode."
             )}
           </p>
-          <.conditions form={@settings_form} disabled={not @can_edit} />
-        </div>
-
-        <div :if={@mode == :zones and not @manual_address} class="space-y-3">
-          <p class="text-sm text-base-content/60">
-            {gettext(
-              "The price depends on the zone of the address. Draw the zones on the map below or add a zone by radius around the branch."
-            )}
-          </p>
-          <.input
-            field={@settings_form[:show_zones]}
-            type="checkbox"
-            label={gettext("Show the delivery zones to customers on the address map")}
-            disabled={not @can_edit}
-          />
-          <.input
-            field={@settings_form[:outside_zones]}
-            type="checkbox"
-            label={gettext("Deliver outside the zones")}
-            disabled={not @can_edit}
-          />
-          <div :if={@outside_zones} class="space-y-2 pl-7">
+          <div :if={@mode == :flat or @manual_address} class="space-y-2">
             <p class="text-sm text-base-content/60">
-              {gettext("Conditions for addresses outside every zone.")}
+              {gettext(
+                "One price for any address. Leave the price empty for free delivery, set «free from» for free delivery from a sum."
+              )}
             </p>
             <.conditions form={@settings_form} disabled={not @can_edit} />
           </div>
-          <p :if={not @outside_zones} class="text-sm text-base-content/60 pl-7">
-            {gettext(
-              "Addresses outside the zones are refused, the customer sees «Sorry, we do not deliver here»."
-            )}
-          </p>
-        </div>
 
-        <div
-          :if={@mode == :zones and not @manual_address and not @address_map}
-          role="alert"
-          class="alert alert-warning text-sm"
-        >
-          <.icon name="hero-exclamation-triangle" class="size-5" />
-          <span>
-            {gettext(
-              "Zones need DaData: without it the site has no address map, addresses have no point and delivery orders are refused."
-            )}
-          </span>
-        </div>
+          <div :if={@mode == :zones and not @manual_address} class="space-y-3">
+            <p class="text-sm text-base-content/60">
+              {gettext(
+                "The price depends on the zone of the address. Draw the zones on the map below or add a zone by radius around the branch."
+              )}
+            </p>
+            <.input
+              field={@settings_form[:show_zones]}
+              type="checkbox"
+              label={gettext("Show the delivery zones to customers on the address map")}
+              disabled={not @can_edit}
+            />
+            <.input
+              field={@settings_form[:outside_zones]}
+              type="checkbox"
+              label={gettext("Deliver outside the zones")}
+              disabled={not @can_edit}
+            />
+            <div :if={@outside_zones} class="space-y-2 pl-7">
+              <p class="text-sm text-base-content/60">
+                {gettext("Conditions for addresses outside every zone.")}
+              </p>
+              <.conditions form={@settings_form} disabled={not @can_edit} />
+            </div>
+            <p :if={not @outside_zones} class="text-sm text-base-content/60 pl-7">
+              {gettext(
+                "Addresses outside the zones are refused, the customer sees «Sorry, we do not deliver here»."
+              )}
+            </p>
+          </div>
+
+          <div
+            :if={@mode == :zones and not @manual_address and not @address_map}
+            role="alert"
+            class="alert alert-warning text-sm"
+          >
+            <.icon name="hero-exclamation-triangle" class="size-5" />
+            <span>
+              {gettext(
+                "Zones need DaData: without it the site has no address map, addresses have no point and delivery orders are refused."
+              )}
+            </span>
+          </div>
+        </.form_section>
       </.form>
 
       <section

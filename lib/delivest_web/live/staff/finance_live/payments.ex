@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Staff.FinanceLive.Payments do
   use DelivestWeb, :live_view
-  import DelivestWeb.Staff.FoundationComponents, only: [error_summary: 1, changeset_errors: 1]
+
+  import DelivestWeb.Staff.FoundationComponents,
+    only: [error_summary: 1, changeset_errors: 1, form_section: 1]
 
   alias Delivest.{Identity, Payments}
   alias Delivest.Identity.Branch.PaymentSettings
@@ -46,7 +48,7 @@ defmodule DelivestWeb.Staff.FinanceLive.Payments do
          |> assign(current_branch: branch)
          |> assign_form(PaymentSettings.changeset(Payments.settings(branch), %{}))
          |> put_flash(:info, gettext("Settings saved"))
-         |> push_event("staff:form-saved", %{})}
+         |> push_event("staff:form-saved", %{id: "payments-form"})}
 
       {:error, :info, %Ecto.Changeset{}} ->
         {:noreply,
@@ -55,7 +57,8 @@ defmodule DelivestWeb.Staff.FinanceLive.Payments do
            PaymentSettings.changeset(Payments.settings(socket.assigns.current_branch), params)
            |> Map.put(:action, :validate)
          )
-         |> put_flash(:error, gettext("Failed to save"))}
+         |> put_flash(:error, gettext("Failed to save"))
+         |> push_event("staff:form-failed", %{id: "payments-form"})}
 
       {:error, _reason} ->
         {:noreply,
@@ -64,7 +67,8 @@ defmodule DelivestWeb.Staff.FinanceLive.Payments do
            PaymentSettings.changeset(Payments.settings(socket.assigns.current_branch), params)
            |> Map.put(:action, :validate)
          )
-         |> put_flash(:error, gettext("Permission denied"))}
+         |> put_flash(:error, gettext("Permission denied"))
+         |> push_event("staff:form-failed", %{id: "payments-form"})}
     end
   end
 
@@ -104,50 +108,52 @@ defmodule DelivestWeb.Staff.FinanceLive.Payments do
           errors={changeset_errors(@form.source)}
           form_name="payments"
         />
-        <.input
-          field={@form[:cash]}
-          type="checkbox"
-          label={gettext("Cash to the courier")}
-          disabled={not @can_edit}
-        />
-        <.input
-          field={@form[:card_offline]}
-          type="checkbox"
-          label={gettext("Card to the courier")}
-          disabled={not @can_edit}
-        />
-        <.input
-          field={@form[:online]}
-          type="checkbox"
-          label={gettext("Online payment (YooKassa)")}
-          disabled={not @can_edit or not @online_ready}
-        />
-        <p :if={not @online_ready} id="online-unavailable" class="text-sm text-warning pl-7">
-          {gettext("Connect YooKassa and pass the connection check in the integrations first.")}
-          <.link
-            :if={Identity.can?(@current_staff, "admin")}
-            navigate={~p"/staff/b/#{@current_branch}/integrations/yookassa"}
-            class="link"
-          >
-            {gettext("Open YooKassa settings")}
-          </.link>
-        </p>
-        <div :if={@form[:online].value in [true, "true"]} class="pl-7 space-y-1">
+        <.form_section id="payment-methods-section" title={gettext("Payment methods")}>
           <.input
-            field={@form[:skip_confirmation_call]}
+            field={@form[:cash]}
             type="checkbox"
-            label={gettext("Do not call the customer to confirm paid orders")}
+            label={gettext("Cash to the courier")}
             disabled={not @can_edit}
           />
-          <p class="text-sm text-base-content/60">
-            {gettext(
-              "A paid order is accepted automatically and the customer sees \"Order accepted, we started cooking\". If the operator changes the order, they call the customer."
-            )}
+          <.input
+            field={@form[:card_offline]}
+            type="checkbox"
+            label={gettext("Card to the courier")}
+            disabled={not @can_edit}
+          />
+          <.input
+            field={@form[:online]}
+            type="checkbox"
+            label={gettext("Online payment (YooKassa)")}
+            disabled={not @can_edit or not @online_ready}
+          />
+          <p :if={not @online_ready} id="online-unavailable" class="text-sm text-warning pl-7">
+            {gettext("Connect YooKassa and pass the connection check in the integrations first.")}
+            <.link
+              :if={Identity.can?(@current_staff, "admin")}
+              navigate={~p"/staff/b/#{@current_branch}/integrations/yookassa"}
+              class="link"
+            >
+              {gettext("Open YooKassa settings")}
+            </.link>
           </p>
-        </div>
-        <p :if={@form[:cash].errors != []} class="text-sm text-error">
-          {gettext("Enable at least one payment method")}
-        </p>
+          <div :if={@form[:online].value in [true, "true"]} class="pl-7 space-y-1">
+            <.input
+              field={@form[:skip_confirmation_call]}
+              type="checkbox"
+              label={gettext("Do not call the customer to confirm paid orders")}
+              disabled={not @can_edit}
+            />
+            <p class="text-sm text-base-content/60">
+              {gettext(
+                "A paid order is accepted automatically and the customer sees \"Order accepted, we started cooking\". If the operator changes the order, they call the customer."
+              )}
+            </p>
+          </div>
+          <p :if={@form[:cash].errors != []} class="text-sm text-error">
+            {gettext("Enable at least one payment method")}
+          </p>
+        </.form_section>
       </.form>
     </div>
     """

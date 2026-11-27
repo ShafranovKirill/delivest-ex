@@ -368,17 +368,6 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
 
   def handle_event("back", _, socket), do: {:noreply, assign(socket, reviewing: false)}
 
-  def handle_event("client_sort", %{"field" => field}, socket)
-      when field in ["name", "phone"] do
-    direction =
-      if socket.assigns.client_params["sort"] == field and
-           socket.assigns.client_params["direction"] == "asc",
-         do: "desc",
-         else: "asc"
-
-    {:noreply, patch_clients(socket, %{"sort" => field, "direction" => direction, "page" => "1"})}
-  end
-
   def handle_event("client_search", %{"filter" => %{"search" => search}}, socket) do
     if String.length(search) > 100 do
       {:noreply, assign(socket, client_search_error: "Поиск: не больше 100 символов.")}
@@ -590,8 +579,24 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
   defp client_query(params, changes),
     do: params |> Map.merge(changes) |> Map.put("tab", "clients")
 
-  defp sort_marker(page, field) do
-    if page.sort == field, do: if(page.direction == "asc", do: "↑", else: "↓"), else: ""
+  defp client_sort_path(group_id, params, page, field) do
+    direction =
+      if page.sort == field and page.direction == "asc", do: "desc", else: "asc"
+
+    ~p"/staff/segments/#{group_id}?#{client_query(params, %{"sort" => field, "direction" => direction, "page" => "1"})}"
+  end
+
+  defp client_sort_label(page, field, label) do
+    if page.sort == field do
+      direction = if page.direction == "desc", do: "по убыванию", else: "по возрастанию"
+      "#{label}, #{direction}"
+    else
+      label
+    end
+  end
+
+  defp client_sort_arrow(page) do
+    if page.direction == "desc", do: "↓", else: "↑"
   end
 
   defp client_pager(assigns) do
@@ -820,22 +825,19 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
           выбираете клиентов сами. <strong>Динамический:</strong>
           клиенты подбираются по условиям выполненных заказов; состав обновляется фоновым пересчётом, обычно раз в сутки.
         </div>
-        <div id="segment-cards" class="grid gap-3 sm:grid-cols-2" phx-update="stream">
-          <div
-            :for={{dom_id, group} <- @streams.groups}
-            id={dom_id}
-            class="min-w-0 rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm transition hover:border-primary/40 hover:shadow-md"
-          >
-            <.link navigate={~p"/staff/segments/#{group.id}"} class="block break-words font-semibold">{group.name}</.link>
-            <p class="mt-1 text-sm text-base-content/65">
-              {if group.kind == :manual, do: "Ручной", else: "Динамический"} · {if group.scope ==
-                                                                                     :franchise,
-                                                                                   do: "Вся сеть",
-                                                                                   else:
-                                                                                     "Выбранные филиалы"}
-            </p>
-          </div>
-        </div>
+        <.table id="segment-cards" rows={@streams.groups} show_column_chooser={false}>
+          <:col :let={{_id, group}} label="Сегмент">
+            <.link navigate={~p"/staff/segments/#{group.id}"} class="font-semibold hover:text-primary">
+              {group.name}
+            </.link>
+          </:col>
+          <:col :let={{_id, group}} label="Тип">
+            {if group.kind == :manual, do: "Ручной", else: "Динамический"}
+          </:col>
+          <:col :let={{_id, group}} label="Область">
+            {if group.scope == :franchise, do: "Вся сеть", else: "Выбранные филиалы"}
+          </:col>
+        </.table>
       </section>
       <.link
         :if={@live_action == :index and @after_id}
@@ -1219,56 +1221,65 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
               phx-disable-with="Применяем…"
             >Подтвердить изменение</button>
           </div>
-          <div class="overflow-x-auto rounded-xl border border-base-300">
-            <table class="table table-zebra table-sm w-full">
-              <thead>
-                <tr>
-                  <th scope="col">
-                    <button
-                      type="button"
-                      phx-click="client_sort"
-                      phx-value-field="name"
-                      class="btn btn-ghost btn-sm"
-                    >Имя {sort_marker(@client_page, "name")}</button>
-                  </th>
-                  <th scope="col">
-                    <button
-                      type="button"
-                      phx-click="client_sort"
-                      phx-value-field="phone"
-                      class="btn btn-ghost btn-sm"
-                    >Телефон {sort_marker(@client_page, "phone")}</button>
-                  </th>
-                  <th :if={@group.kind == :manual and @can_manage} scope="col" class="text-right">
-                    Действие
-                  </th>
-                </tr>
-              </thead>
-              <tbody id="segment-client-rows">
-                <tr :for={client <- @client_page.clients} id={"client-row-#{client.id}"}>
-                  <td class="font-medium">{client.name}</td>
-                  <td>{client.phone}</td>
-                  <td :if={@group.kind == :manual and @can_manage} class="text-right">
-                    <button
-                      type="button"
-                      phx-click={
-                        if @client_page.mode == "available", do: "add_member", else: "remove_member"
-                      }
-                      phx-value-id={client.id}
-                      class={[
-                        "btn btn-sm",
-                        if(@client_page.mode == "available",
-                          do: "btn-outline",
-                          else: "btn-ghost text-error"
-                        )
-                      ]}
-                      phx-disable-with="Обновляем…"
-                    >{if @client_page.mode == "available", do: "Добавить", else: "Убрать"}</button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          <nav
+            id="segment-client-sort-mobile"
+            class="flex gap-2 sm:hidden"
+            aria-label="Сортировка клиентов"
+          >
+            <.link
+              patch={client_sort_path(@group.id, @client_params, @client_page, "name")}
+              aria-current={@client_page.sort == "name" && "true"}
+              aria-label={client_sort_label(@client_page, "name", "Имя")}
+              class="btn btn-ghost btn-sm"
+            >Имя
+            <span :if={@client_page.sort == "name"} aria-hidden="true">{client_sort_arrow(
+              @client_page
+            )}</span></.link>
+            <.link
+              patch={client_sort_path(@group.id, @client_params, @client_page, "phone")}
+              aria-current={@client_page.sort == "phone" && "true"}
+              aria-label={client_sort_label(@client_page, "phone", "Телефон")}
+              class="btn btn-ghost btn-sm"
+            >Телефон
+            <span :if={@client_page.sort == "phone"} aria-hidden="true">{client_sort_arrow(
+              @client_page
+            )}</span></.link>
+          </nav>
+          <.table
+            id="segment-client-rows"
+            rows={@client_page.clients}
+            row_id={fn client -> "client-row-#{client.id}" end}
+            sort_path={
+              fn field -> client_sort_path(@group.id, @client_params, @client_page, field) end
+            }
+            sort_current={@client_page.sort}
+            sort_direction={@client_page.direction}
+            show_column_chooser={false}
+          >
+            <:col :let={client} label="Имя" sort="name">
+              <span class="font-medium">{client.name}</span>
+            </:col>
+            <:col :let={client} label="Телефон" sort="phone">
+              {client.phone}
+            </:col>
+            <:action :let={client} :if={@group.kind == :manual and @can_manage}>
+              <button
+                type="button"
+                phx-click={
+                  if @client_page.mode == "available", do: "add_member", else: "remove_member"
+                }
+                phx-value-id={client.id}
+                class={[
+                  "btn btn-sm",
+                  if(@client_page.mode == "available",
+                    do: "btn-outline",
+                    else: "btn-ghost text-error"
+                  )
+                ]}
+                phx-disable-with="Обновляем…"
+              >{if @client_page.mode == "available", do: "Добавить", else: "Убрать"}</button>
+            </:action>
+          </.table>
           <p :if={@client_page.clients == []} class="text-sm text-base-content/65">
             {cond do
               @client_page.search != "" ->

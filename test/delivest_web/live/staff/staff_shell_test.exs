@@ -17,9 +17,11 @@ defmodule DelivestWeb.Staff.StaffShellTest do
     {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/dashboard")
 
     assert has_element?(lv, "#main-sidebar #sidebar-home[href='/staff']")
-    assert has_element?(lv, "#main-sidebar #sidebar-toggle[aria-controls='main-sidebar']")
+    assert has_element?(lv, "#main-sidebar:not(.border-r)")
+    refute has_element?(lv, "#main-sidebar #sidebar-toggle")
     assert has_element?(lv, "#nav-section-main")
     assert has_element?(lv, "#sidebar-group-settings-toggle")
+    assert has_element?(lv, "#sidebar-group-settings-toggle .staff-sidebar-disclosure")
     assert has_element?(lv, "#nav-section-main > #nav-section-settings")
 
     assert has_element?(
@@ -29,10 +31,11 @@ defmodule DelivestWeb.Staff.StaffShellTest do
 
     assert has_element?(lv, "#staff-header #command-palette-trigger")
     assert has_element?(lv, "#staff-header #header-sidebar-toggle[data-sidebar-toggle]")
-    assert has_element?(lv, "#staff-header #header-sidebar-toggle.h-10")
-    assert has_element?(lv, "#staff-header #header-sidebar-toggle.border-base-300")
-    assert has_element?(lv, "#main-sidebar #sidebar-toggle.h-10.border-base-300")
-    assert has_element?(lv, "#staff-header #header-branch .staff-branch-trigger.h-10")
+    assert has_element?(lv, "#staff-header:not(.border-b)")
+    assert has_element?(lv, "#staff-header #header-sidebar-toggle.h-8")
+    assert has_element?(lv, "#staff-header #header-sidebar-toggle.btn-ghost.border")
+    assert has_element?(lv, "#staff-header #staff-header-separator[aria-hidden='true']")
+    assert has_element?(lv, "#staff-header #header-branch .staff-branch-trigger.h-8")
     refute has_element?(lv, "#main-sidebar #header-branch")
     refute has_element?(lv, "#main-sidebar #command-palette-trigger")
     assert has_element?(lv, "#staff-profile-trigger[aria-expanded='false']")
@@ -40,6 +43,11 @@ defmodule DelivestWeb.Staff.StaffShellTest do
     assert has_element?(lv, "#staff-profile-menu #header-push-toggle")
     assert has_element?(lv, "#staff-profile-menu a[href='/staff/auth/log_out']")
     assert has_element?(lv, "#staff-profile-menu #app-version")
+
+    assert has_element?(
+             lv,
+             "#staff-alert-tracker[hidden][data-branch-id='#{branch.id}'][data-overdue-ids=''][data-kitchen-late-ids=''][data-channel-cancelled-ids='']"
+           )
   end
 
   test "limited staff keeps profile controls without order sound or settings", %{conn: conn} do

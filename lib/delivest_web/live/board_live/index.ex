@@ -87,12 +87,12 @@ defmodule DelivestWeb.BoardLive.Index do
         id="board-start"
         type="button"
         data-board-start
-        class="btn btn-primary btn-lg fixed bottom-6 right-6 z-40 group-data-fullscreen:hidden"
+        class="btn btn-primary fixed inset-x-3 bottom-3 z-40 h-auto min-h-11 whitespace-normal px-3 py-2 text-sm group-data-fullscreen:hidden sm:btn-lg sm:inset-x-auto sm:bottom-6 sm:right-6"
       >
         <.icon name="hero-speaker-wave" class="size-6" /> {gettext("Sound and full screen")}
       </button>
 
-      <div class="grid flex-1 grid-cols-2 divide-x divide-base-300 overflow-hidden">
+      <div class="grid flex-1 grid-cols-2 divide-x divide-base-300 overflow-hidden pb-16 group-data-fullscreen:pb-0 sm:pb-0">
         <.column id="board-preparing" title={gettext("Being cooked")}>
           <span
             :for={order <- @preparing}
@@ -137,7 +137,7 @@ defmodule DelivestWeb.BoardLive.Index do
     ~H"""
     <section id={@id} data-board-column={@id} class="flex min-h-0 flex-col">
       <h2 class={[
-        "px-6 py-5 text-center text-4xl font-black uppercase tracking-wide",
+        "break-words px-1.5 py-3 text-center text-base font-black uppercase leading-tight sm:px-6 sm:py-5 sm:text-2xl lg:text-4xl",
         if(@accent, do: "bg-success text-success-content", else: "bg-base-300")
       ]}>
         {@title}

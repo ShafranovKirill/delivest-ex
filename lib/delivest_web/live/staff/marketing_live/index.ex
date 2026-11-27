@@ -1250,38 +1250,36 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
           class={["btn btn-sm", if(@deleted_filter, do: "btn-primary", else: "btn-outline")]}
         >{gettext("Deleted policies")}</.link>
       </div>
-      <p
+      <.empty_state
         :if={@live_action == :index and @policy_empty}
         id="marketing-empty"
-        class="rounded-xl border border-base-300 bg-base-100 p-5 text-sm text-base-content/70"
-      >
-        {if @deleted_filter,
-          do: gettext("No deleted policies."),
-          else: gettext("No working policies yet.")}
-      </p>
+        title={
+          if @deleted_filter,
+            do: gettext("No deleted policies."),
+            else: gettext("No working policies yet.")
+        }
+      />
 
-      <section
+      <.table
         :if={@live_action == :index}
         id="marketing-policies"
-        phx-update="stream"
-        class="grid gap-3 md:grid-cols-2"
+        rows={@streams.policies}
+        show_column_chooser={false}
       >
-        <article
-          :for={{dom_id, policy} <- @streams.policies}
-          id={dom_id}
-          class="rounded-2xl border border-base-300 bg-base-100 text-base-content p-5 shadow-sm transition hover:shadow-md"
-        >
+        <:col :let={{_id, policy}} label={gettext("Name")}>
           <.link
             navigate={branch_path(~p"/staff/marketing/#{policy.id}", @navigation_branch)}
-            class="text-lg font-semibold text-primary"
+            class="font-semibold hover:text-primary"
           >{policy.name}</.link>
-          <p class="mt-2 text-sm text-base-content/60">
-            {policy_status_label(policy)} · {scope_label(policy.scope)} · {gettext("%{count} issues",
-              count: policy.issued_count
-            )}
-          </p>
-        </article>
-      </section>
+        </:col>
+        <:col :let={{_id, policy}} label={gettext("Status")}>
+          <span class="badge badge-soft">{policy_status_label(policy)}</span>
+        </:col>
+        <:col :let={{_id, policy}} label={gettext("Scope")}>{scope_label(policy.scope)}</:col>
+        <:col :let={{_id, policy}} label={gettext("Issued")}>
+          {gettext("%{count} issues", count: policy.issued_count)}
+        </:col>
+      </.table>
       <button
         :if={@live_action == :index and @policy_after}
         id="marketing-more-policies"

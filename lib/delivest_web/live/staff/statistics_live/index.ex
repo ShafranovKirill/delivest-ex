@@ -718,6 +718,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
         top_products: Enum.take(sort_details(products, :revenue), 5),
         top_categories: Enum.take(categories, 5)
       )
+      |> load_heatmap()
       |> schedule_report_refresh()
     else
       _ -> put_flash(socket, :error, gettext("Statistics are unavailable"))
@@ -1215,7 +1216,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
           id="statistics-compare"
           type="button"
           phx-click="open_comparison"
-          class="btn btn-sm btn-outline"
+          class="staff-page-primary-action btn btn-sm btn-outline"
         >{gettext("Compare periods")}</button>
       </div>
     </div>
@@ -1227,7 +1228,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-3">
+    <div class="statistics-surface space-y-4">
       <nav
         :if={@section in ~w(sources funnel)}
         id="sources-advertising-tabs"
@@ -1606,11 +1607,6 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
         id="statistics-sales-detail"
         class="space-y-4"
       >
-        <.link
-          id="statistics-heatmap-link"
-          href={tab_path(assigns, "overview") <> "#statistics-heatmap"}
-          class="btn btn-sm btn-outline"
-        >{gettext("When orders arrive")}</.link>
         <p
           :if={@overview.state == :partial}
           id="statistics-partial"
@@ -1703,6 +1699,17 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
             metric={metric}
           />
         </div>
+        <.heatmap_panel
+          :if={assigns[:heatmap] || @heatmap_error}
+          heatmap={@heatmap || %{cells: [], branches: [], period: @heatmap_period, state: :empty}}
+          detail={@heatmap_detail}
+          from={@heatmap_from}
+          to={@heatmap_to}
+          error={@heatmap_error}
+          fulfillment={@heatmap_fulfillment}
+          branch_id={@heatmap_branch_id}
+          network?={@global_statistics?}
+        />
         <div class="grid gap-3 md:grid-cols-2">
           <section
             id="statistics-top-products"

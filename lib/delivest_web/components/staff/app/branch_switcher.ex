@@ -42,7 +42,7 @@ defmodule DelivestWeb.BranchSwitcher do
     <div
       :if={length(@branches) == 1 and not @network_allowed}
       id="header-branch-static"
-      class="flex h-10 items-center gap-2 rounded-field border border-base-300 px-2.5 text-sm font-medium"
+      class="flex h-8 min-w-0 items-center gap-2 rounded-field border border-base-300 bg-base-200/50 px-2.5 text-sm font-medium"
     >
       <.icon name="hero-building-storefront" class="size-4 text-base-content/70" />
       <span class="truncate">{hd(@branches).name}</span>
@@ -50,17 +50,16 @@ defmodule DelivestWeb.BranchSwitcher do
     <details
       :if={length(@branches) != 1 or @network_allowed}
       id="header-branch"
-      class="group/branch relative w-full min-w-0"
+      class="group/branch relative w-fit max-w-full min-w-[120px]"
     >
       <summary
         aria-label={@scope_label}
         aria-controls="header-branch-menu"
         title={@scope_label}
-        class="staff-branch-trigger flex h-10 min-h-10 w-full min-w-0 cursor-pointer list-none items-center gap-2 rounded-field border border-base-300 px-2.5 hover:bg-base-200 [&::-webkit-details-marker]:hidden"
+        class="staff-branch-trigger flex h-8 min-h-8 w-full min-w-0 cursor-pointer list-none items-center gap-2 rounded-field border border-base-300 px-2.5 hover:bg-base-200 group-open/branch:bg-base-200 [&::-webkit-details-marker]:hidden"
       >
-        <.icon name="hero-building-storefront" class="size-4 text-base-content/70 shrink-0" />
         <span
-          class="staff-sidebar-label truncate text-sm font-medium text-base-content"
+          class="staff-branch-label truncate text-sm font-medium text-base-content"
           title={@scope_label}
         >
           <%= if @current_branch do %>
@@ -70,15 +69,15 @@ defmodule DelivestWeb.BranchSwitcher do
           <% end %>
         </span>
         <.icon
-          name="hero-chevron-down"
-          class="staff-sidebar-label size-4 shrink-0 text-base-content/50 group-open/branch:rotate-180"
+          name="hero-chevron-right"
+          class="ml-auto size-4 shrink-0 text-base-content/50 transition-transform group-open/branch:rotate-90"
         />
       </summary>
 
       <div
         id="header-branch-menu"
         phx-hook=".BranchFilter"
-        class="staff-branch-menu absolute left-0 top-full z-[70] mt-2 w-72 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
+        class="staff-branch-menu absolute left-0 top-full z-[70] mt-2 w-72 rounded-box bg-base-100 p-2"
       >
         <label :if={@searchable} class="input input-sm mb-2 w-full">
           <.icon name="hero-magnifying-glass" class="size-4 text-base-content/50" />
@@ -101,7 +100,12 @@ defmodule DelivestWeb.BranchSwitcher do
               href={@network_path}
               class={[is_nil(@current_branch) && "menu-active"]}
             >
-              {@network_label}
+              <span class="min-w-0 flex-1 truncate">{@network_label}</span>
+              <.icon
+                :if={is_nil(@current_branch)}
+                name="hero-check"
+                class="size-4 shrink-0"
+              />
             </.link>
           </li>
           <li :for={{branch, path, label} <- @branch_links} data-name={String.downcase(branch.name)}>
@@ -110,8 +114,8 @@ defmodule DelivestWeb.BranchSwitcher do
               href={path}
               class={[@current_branch && @current_branch.id == branch.id && "menu-active"]}
             >
-              <span class="truncate">{branch.name}</span>
-              <span :if={label} class="text-xs text-base-content/60">· {label}</span>
+              <span class="min-w-0 flex-1 truncate">{branch.name}</span>
+              <span :if={label} class="shrink-0 text-xs text-base-content/60">· {label}</span>
               <.icon
                 :if={@current_branch && @current_branch.id == branch.id}
                 name="hero-check"

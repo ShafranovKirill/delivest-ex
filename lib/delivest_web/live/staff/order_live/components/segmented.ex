@@ -17,8 +17,8 @@ defmodule DelivestWeb.Staff.OrderLive.Components.Segmented do
       <label
         :for={{value, label, icon} <- @options}
         class={[
-          "flex min-w-0 items-center justify-center rounded-field px-2 py-2 text-sm font-medium cursor-pointer text-base-content/70 transition-colors hover:text-base-content has-checked:bg-base-100 has-checked:text-primary has-checked:shadow-sm",
-          @stacked && "flex-col gap-1",
+          "flex min-w-0 items-center justify-center rounded-field px-2 py-2 text-sm font-medium cursor-pointer text-base-content/70 transition-colors hover:text-base-content has-checked:bg-base-100 has-checked:text-primary has-checked:shadow-sm has-focus-visible:outline-2 has-focus-visible:outline-primary has-focus-visible:outline-offset-2",
+          @stacked && "flex-col gap-1 px-1 text-[clamp(11px,3.3vw,13px)]",
           !@stacked && "gap-1.5"
         ]}
       >
@@ -30,7 +30,9 @@ defmodule DelivestWeb.Staff.OrderLive.Components.Segmented do
           class="sr-only"
         />
         <.icon name={icon} class="size-4 shrink-0" />
-        <span class="min-w-0 whitespace-normal text-center leading-tight">{label}</span>
+        <span class={["min-w-0 text-center leading-tight", @stacked && "whitespace-nowrap"]}>
+          {label}
+        </span>
       </label>
     </div>
     """

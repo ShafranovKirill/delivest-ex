@@ -5,10 +5,10 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
   alias Delivest.Features
   alias Delivest.Franchise.Rating
   alias Delivest.Identity
-  alias DelivestWeb.Staff.FranchiseLive.FranchiseHelpers
+  alias DelivestWeb.Staff.FranchiseLive.{FranchiseHelpers, Sections}
 
   import DelivestWeb.Staff.FoundationComponents,
-    only: [error_summary: 1, changeset_errors: 1]
+    only: [changeset_errors: 1, error_summary: 1, form_section: 1]
 
   @impl true
   def update(assigns, socket) do
@@ -141,10 +141,10 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
           errors={changeset_errors(@form.source)}
           form_name={@form.name}
         />
-        <section
+        <.form_section
           :if={@section == :cutlery}
           id="franchise-cutlery-settings"
-          class="rounded-box border border-base-300 bg-base-100 p-5 space-y-3"
+          title={Sections.describe(:cutlery).title}
         >
           <.input
             field={@form[:cutlery_enabled]}
@@ -156,11 +156,11 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
               "Free: one set per started 1,000 ₽ of food after discounts, excluding delivery. Customers can change the quantity, including to 0."
             )}
           </p>
-        </section>
-        <section
+        </.form_section>
+        <.form_section
           :if={@section == :maintenance}
           id="franchise-maintenance-settings"
-          class="rounded-box border border-base-300 bg-base-100 p-5 space-y-3"
+          title={Sections.describe(:maintenance).title}
         >
           <.input
             field={@form[:maintenance_enabled]}
@@ -172,10 +172,11 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
               "Existing orders and staff tools remain available. New orders through the public storefront are paused."
             )}
           </p>
-        </section>
-        <section
+        </.form_section>
+        <.form_section
           :if={@section == :brand}
-          class="p-5 bg-base-100 rounded-box border border-base-300 space-y-4"
+          id="franchise-brand-settings"
+          title={Sections.describe(:brand).title}
         >
           <.input field={@form[:name]} type="text" label={gettext("Name")} maxlength="60" />
           <.input
@@ -297,18 +298,18 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
               {translate_error(error)}
             </p>
           </div>
-        </section>
+        </.form_section>
 
-        <section
+        <.form_section
           :if={@section == :loyalty}
-          class="p-5 bg-base-100 rounded-box border border-base-300 space-y-4"
+          id="franchise-loyalty-settings"
+          title={Sections.describe(:loyalty).title}
         >
           <div
             :if={@marketing_push_available?}
             id="marketing-push-frequency"
-            class="space-y-3 border-b border-base-300 pb-5"
+            class="space-y-3"
           >
-            <h2 class="font-semibold">{gettext("Marketing Push messages")}</h2>
             <p class="text-sm text-base-content/60">
               {gettext(
                 "The limit applies to each customer across all branches. A Push with an unknown delivery result counts toward the limit. Rewards and messages on the site are unaffected."
@@ -331,11 +332,12 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
               />
             </div>
           </div>
-        </section>
+        </.form_section>
 
-        <section
+        <.form_section
           :if={@section == :auth}
-          class="p-5 bg-base-100 rounded-box border border-base-300 space-y-4"
+          id="franchise-auth-settings"
+          title={Sections.describe(:auth).title}
         >
           <div class="flex items-center justify-between gap-2">
             <div>
@@ -353,11 +355,12 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
               label={gettext("Required")}
             />
           </div>
-        </section>
+        </.form_section>
 
-        <section
+        <.form_section
           :if={@section == :seller}
-          class="p-5 bg-base-100 rounded-box border border-base-300 space-y-4"
+          id="franchise-seller-settings"
+          title={Sections.describe(:seller).title}
         >
           <div class="grid grid-cols-1 sm:grid-cols-[8rem_1fr] gap-x-3">
             <.input
@@ -392,9 +395,9 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
             label={gettext("Legal address")}
             maxlength="300"
           />
-        </section>
+        </.form_section>
 
-        <div class="flex justify-end">
+        <div class="flex justify-end border-t border-base-300 py-4">
           <button
             type="submit"
             data-staff-save="edit"

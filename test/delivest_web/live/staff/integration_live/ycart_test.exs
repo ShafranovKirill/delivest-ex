@@ -68,7 +68,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YcartTest do
              Repo.get_by!(BranchInfo, branch_id: branch.id).ycart_settings
 
     {:ok, index, _} = live(conn, ~p"/staff/b/#{branch}/integrations")
-    assert has_element?(index, "#integration-ycart-state", "Enabled")
-    refute has_element?(index, "#integration-ycart-state", "OK")
+    assert has_element?(index, "#integration-ycart-state", "Connected")
+    refute has_element?(index, "#integration-ycart-state", "Enabled")
   end
 end

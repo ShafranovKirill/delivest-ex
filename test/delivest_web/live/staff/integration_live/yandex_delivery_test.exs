@@ -36,7 +36,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDeliveryTest do
 
   test "saves the settings and keeps the token", %{conn: conn, branch: branch} do
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/integrations")
-    assert lv |> element("#integration-yandex-delivery") |> render() =~ "Not set up"
+    assert has_element?(lv, "#integration-yandex-delivery-state", "Not connected")
 
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/integrations/yandex-delivery")
 
@@ -62,7 +62,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDeliveryTest do
     refute render(lv) =~ "y-token"
 
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/integrations")
-    assert lv |> element("#integration-yandex-delivery") |> render() =~ "Not checked"
+    assert has_element?(lv, "#integration-yandex-delivery-state", ~r/^Connected$/)
   end
 
   test "a saved key change resets the check and the old result never returns",

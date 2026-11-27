@@ -199,13 +199,19 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportsTest do
     refute has_element?(view, "#statistics-report-state", "Last successful check")
     refute has_element?(view, "#statistics-report-state", "Oldest successful bucket")
     assert has_element?(view, "#statistics-report-summary", "Average check")
+
+    assert has_element?(
+             view,
+             "#statistics-report-summary .statistics-metric-card .statistics-metric-icon"
+           )
+
     assert has_element?(view, "#statistics-report-summary", OrderHelpers.money(750))
     assert has_element?(view, "#statistics-report-summary", "Cancelled")
     assert has_element?(view, "#statistics-report-summary", "Refunded")
-    assert has_element?(view, "#statistics-report-table", "Storefront")
+    assert has_element?(view, "#statistics-report-rows-table", "Storefront")
     assert has_element?(view, ~s{select[name="channel"] option}, "Storefront")
     refute has_element?(view, ~s{input[name="channel"]})
-    refute has_element?(view, "#statistics-report-table td", "channel")
+    refute has_element?(view, "#statistics-report-rows-table td", "channel")
   end
 
   test "network channel totals include only authorized feature-enabled branches" do

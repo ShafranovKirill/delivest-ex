@@ -27,6 +27,58 @@
   column-gap: .5rem;
 }
 
+.order-card-overview-section {
+  min-width: 0;
+}
+
+.order-card-section-title {
+  margin-bottom: .625rem;
+  color: var(--color-base-content);
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+#shown-order .order-card-overview-section {
+  padding: 1rem;
+  border: 1px solid var(--color-base-300);
+  border-radius: var(--radius-box);
+  background: var(--color-base-100);
+}
+
+#shown-order .order-card-overview-section .order-card-items {
+  display: grid;
+  gap: .5rem;
+}
+
+#shown-order .order-card-detail-section {
+  margin: .75rem 1rem;
+  padding: 1rem;
+  border: 1px solid var(--color-base-300);
+  border-radius: var(--radius-box);
+  background: var(--color-base-100);
+}
+
+#shown-order .order-card-detail-section > :is(ul, ol) {
+  padding: 0;
+  border: 0;
+}
+
+#orders .order-card-number {
+  letter-spacing: -.02em;
+}
+
+#orders .order-card-footer {
+  background: color-mix(in srgb, var(--color-base-100) 85%, var(--color-base-200));
+}
+
+#orders .order-card-footer :is(button, a, select):focus-visible,
+#orders-filters :is(input, select, summary, button, a):focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 .order-card-print-menu {
   position: absolute;
   top: calc(100% + .25rem);
@@ -73,6 +125,16 @@ article:has(> .order-card-header .order-card-printer[open]) {
   padding: 0;
 }
 
+.staff-shell-content:has(#orders-page):has(#staff-context-navigation #staff-section-navigation a) {
+  --orders-filter-top: calc(var(--staff-header-height) + var(--staff-subsection-height) + 1px);
+}
+
+#orders-page {
+  --orders-page-gutter: .5rem;
+  padding-inline: var(--orders-page-gutter);
+  padding-top: 0;
+}
+
 #orders-page:fullscreen {
   width: 100vw;
   height: 100dvh;
@@ -91,12 +153,17 @@ article:has(> .order-card-header .order-card-printer[open]) {
 
 #orders-filters {
   position: sticky;
-  top: var(--staff-header-height);
+  top: var(--orders-filter-top, var(--staff-header-height));
   z-index: 25;
+  margin-inline: calc(-1 * var(--orders-page-gutter));
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(7rem, 10rem) minmax(8rem, 11rem) auto auto auto;
   align-items: start;
-  background: var(--color-base-100);
+  background: var(--staff-workspace-surface, var(--color-base-100));
+  border: 0;
+  border-bottom: 1px solid var(--color-base-300);
+  border-radius: 0;
+  box-shadow: none;
 }
 
 #orders-page:fullscreen #orders-filters {
@@ -138,8 +205,12 @@ article:has(> .order-card-header .order-card-printer[open]) {
   top: calc(100% + .5rem);
   right: 0;
   width: min(22rem, calc(100vw - 1rem));
-  max-height: calc(100dvh - var(--staff-header-height) - 4rem);
+  max-height: calc(100dvh - var(--orders-filter-top, var(--staff-header-height)) - 4rem);
   overflow-y: auto;
+}
+
+#orders-page:fullscreen .orders-filter-panel {
+  max-height: calc(100dvh - 4rem);
 }
 
 #orders-filters .orders-status-icon {
@@ -153,6 +224,12 @@ article:has(> .order-card-header .order-card-printer[open]) {
 #orders-filters .orders-date-range input {
   flex: 1 1 0;
   max-width: 10rem;
+}
+
+@media (min-width: 640px) {
+  #orders-page {
+    --orders-page-gutter: .75rem;
+  }
 }
 
 @media (max-width: 767px) {
@@ -206,7 +283,7 @@ article:has(> .order-card-header .order-card-printer[open]) {
 
 @media (max-width: 359px) {
   #orders-page {
-    padding-inline: .25rem;
+    --orders-page-gutter: .25rem;
   }
 
   #orders-filters {
@@ -393,4 +470,80 @@ html:has(#pos) {
     border-left: 0;
     border-top: 1px solid var(--color-base-300);
   }
+}
+#products-table tbody tr {
+  background: var(--color-base-100);
+}
+
+#products-table tbody tr + tr {
+  border-top: 1px solid var(--color-base-300);
+}
+
+#products-table tbody tr:hover {
+  background: color-mix(in srgb, var(--color-primary) 5%, var(--color-base-100));
+}
+
+#products-table tbody tr:has(input[form="product-selection"]:checked) {
+  background: color-mix(in srgb, var(--color-primary) 9%, var(--color-base-100));
+}
+
+@media (min-width: 640px) {
+  #products-table thead th:last-child,
+  #products-table tbody tr td:last-child {
+    position: sticky;
+    right: 0;
+    z-index: 2;
+    width: 3.5rem;
+    min-width: 3.5rem;
+    background: var(--color-base-100);
+    box-shadow: -1px 0 var(--color-base-300);
+  }
+
+  #products-table tbody tr:hover td:last-child {
+    background: color-mix(in srgb, var(--color-primary) 5%, var(--color-base-100));
+  }
+
+  #products-table tbody tr:has(input[form="product-selection"]:checked) td:last-child {
+    background: color-mix(in srgb, var(--color-primary) 9%, var(--color-base-100));
+  }
+}
+
+#products-table .product-status {
+  border: 1px solid color-mix(in srgb, var(--color-success) 30%, var(--color-base-300));
+  background: color-mix(in srgb, var(--color-success) 13%, var(--color-base-100));
+  color: var(--color-base-content);
+}
+
+#products-table .product-status[data-active="false"] {
+  border-color: color-mix(in srgb, var(--color-error) 30%, var(--color-base-300));
+  background: color-mix(in srgb, var(--color-error) 10%, var(--color-base-100));
+}
+
+.statistics-metric-card {
+  height: 100%;
+  background: var(--staff-panel-surface, var(--color-base-100));
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--color-base-content) 4%, transparent);
+}
+
+.statistics-metric-label,
+.statistics-metric-icon,
+.statistics-metric-detail {
+  color: color-mix(in srgb, var(--color-base-content) 60%, transparent);
+}
+
+.statistics-metric-value {
+  line-height: 1.2;
+}
+
+.statistics-surface :is(section, div).bg-base-100.border-base-300,
+.statistics-surface .statistics-panel {
+  border-radius: .75rem;
+  background: var(--staff-panel-surface, var(--color-base-100));
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--color-base-content) 4%, transparent);
+}
+
+.statistics-surface :is(#statistics-top-products, #statistics-top-categories, #statistics-fulfillment,
+  #statistics-payment, #statistics-order-source, #statistics-transfer-destination) > div + div {
+  padding-top: .5rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-base-content) 9%, transparent);
 }

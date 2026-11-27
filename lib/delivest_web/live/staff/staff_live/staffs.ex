@@ -291,6 +291,8 @@ defmodule DelivestWeb.Staff.StaffLive.Staffs do
                 }
                 navigate={~p"/staff/employee/#{stf.id}/edit?#{build_query_params(assigns, %{})}"}
                 class="btn btn-ghost btn-xs btn-square"
+                title={gettext("Edit")}
+                aria-label={gettext("Edit")}
               >
                 <.icon name="hero-pencil-square" class="size-4" />
               </.button>
@@ -299,6 +301,8 @@ defmodule DelivestWeb.Staff.StaffLive.Staffs do
                 phx-click="delete_click"
                 phx-value-id={stf.id}
                 class="btn btn-ghost btn-xs btn-square text-error hover:bg-error/10"
+                title={gettext("Delete")}
+                aria-label={gettext("Delete")}
               >
                 <.icon name="hero-trash" class="size-4" />
               </.button>

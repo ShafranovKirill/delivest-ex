@@ -2,7 +2,9 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
   use DelivestWeb, :live_component
 
   import DelivestWeb.Staff.BranchLive.LocationFields
-  import DelivestWeb.Staff.FoundationComponents, only: [error_summary: 1, changeset_errors: 1]
+
+  import DelivestWeb.Staff.FoundationComponents,
+    only: [changeset_errors: 1, error_summary: 1, form_section: 1]
 
   alias Delivest.Identity
   alias Delivest.Identity.Branch
@@ -237,7 +239,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
           errors={changeset_errors(@form.source)}
           form_name="branch_form"
         />
-        <section class="space-y-4 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6">
+        <.form_section id="branch-form-fields" title={gettext("Settings")}>
           <div :if={@section.id == :general} class="space-y-4">
             <div class="grid gap-4 sm:grid-cols-2">
               <.input field={@form[:name]} type="text" label={gettext("Branch Name")} required />
@@ -355,9 +357,9 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
             <.input field={@form[:whatsapp_url]} type="text" label={gettext("WhatsApp Link")} />
             <.input field={@form[:instagram_url]} type="text" label={gettext("Instagram Link")} />
           </div>
-        </section>
+        </.form_section>
 
-        <div class="flex justify-end gap-3">
+        <div class="flex justify-end gap-3 border-t border-base-300 py-4">
           <.link navigate={cancel_path(assigns)} class="btn btn-ghost">{gettext("Cancel")}</.link>
         </div>
       </.form>

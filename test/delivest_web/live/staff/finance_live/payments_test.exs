@@ -27,6 +27,7 @@ defmodule DelivestWeb.Staff.FinanceLive.PaymentsTest do
     conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
 
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/finance/payments")
+    assert has_element?(lv, "#payment-methods-section")
     assert has_element?(lv, ~s(a[href="/staff/b/#{branch.slug}/finance/transactions"]))
     assert has_element?(lv, ~s(a[href="/staff/b/#{branch.slug}/finance/receipts"]))
   end
@@ -45,6 +46,7 @@ defmodule DelivestWeb.Staff.FinanceLive.PaymentsTest do
     refute has_element?(lv, "#payments-form button[type='submit']")
 
     lv |> form("#payments-form", payments: %{cash: "false"}) |> render_submit()
+    assert_push_event(lv, "staff:form-saved", %{id: "payments-form"})
 
     assert Payments.settings(branch).cash == false
     assert Payments.enabled_methods(branch) == [:card_offline]

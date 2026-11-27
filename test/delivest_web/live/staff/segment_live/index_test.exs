@@ -44,7 +44,7 @@ defmodule DelivestWeb.Staff.SegmentLive.IndexTest do
     view |> element("a", "Следующая страница") |> render_click()
     refute has_element?(view, "a", "Следующая страница")
 
-    assert has_element?(view, "#segment-cards > div")
+    assert has_element?(view, "#segment-cards > tr")
   end
 
   test "disabled feature redirects direct route", %{conn: conn} do
@@ -364,8 +364,35 @@ defmodule DelivestWeb.Staff.SegmentLive.IndexTest do
     |> render_click()
 
     assert length(Regex.scan(~r/id="client-row-[^"]+"/, render(view))) == 1
-    view |> element("button[phx-click='client_sort'][phx-value-field='phone']") |> render_click()
+    view |> element("#segment-client-rows-table th[data-column='phone'] a") |> render_click()
     assert has_element?(view, "#segment-clients", "Страница 1 из 2")
+
+    assert has_element?(
+             view,
+             "#segment-client-rows-table th[data-column='phone'][aria-sort='ascending']",
+             "↑"
+           )
+
+    assert has_element?(
+             view,
+             "#segment-client-sort-mobile a[aria-current='true'][aria-label='Телефон, по возрастанию']"
+           )
+
+    assert has_element?(
+             view,
+             "#segment-client-search input[placeholder='Поиск по имени или телефону']"
+           )
+
+    view |> element("#segment-client-sort-mobile a[aria-current='true']") |> render_click()
+
+    assert has_element?(
+             view,
+             "#segment-client-rows-table th[data-column='phone'][aria-sort='descending']",
+             "↓"
+           )
+
+    assert has_element?(view, "#segment-client-sort-mobile a[aria-label='Телефон, по убыванию']")
+
     view |> form("#segment-client-search", filter: %{search: "Guest 21"}) |> render_submit()
     assert has_element?(view, "#client-row-#{Enum.at(clients, 20).id}")
     assert has_element?(view, "#segment-clients", "Страница 1 из 1")

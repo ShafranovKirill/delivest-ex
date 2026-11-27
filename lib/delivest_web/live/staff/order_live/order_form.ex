@@ -377,6 +377,9 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
         "flex min-h-0 w-full flex-1 flex-col overflow-clip rounded-box border border-base-300 bg-base-100 shadow-sm lg:w-7/12 lg:flex-initial xl:w-8/12",
         @active_tab != :cart && "hidden lg:flex"
       ]}>
+        <div class="hidden border-b border-base-300 px-4 py-3 lg:block">
+          <h1 class="text-base font-semibold">{@page_title}</h1>
+        </div>
         <CatalogComponent.render_catalog
           categories={@categories}
           selected_category_id={@selected_category_id}
@@ -400,7 +403,6 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
           </div>
           <CartComponent.render_summary cart={@cart} />
           <CartComponent.render_promo id="cart-promo" cart={@cart} />
-          <div class="divider my-2"></div>
           <DetailsComponent.render_form form={@form} known_client={@known_client} timing={@timing} />
         </div>
 

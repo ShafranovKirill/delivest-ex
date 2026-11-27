@@ -5,14 +5,14 @@ defmodule DelivestWeb.Staff.RoleLive.RolesTest do
   import Delivest.Factory
   alias Delivest.Features
 
-  test "role card opens a full page and returns to its list position", %{conn: conn} do
+  test "role row opens a full page and returns to its list position", %{conn: conn} do
     actor = insert(:staff, role: insert(:role, permissions: ["admin"]))
     role = insert(:role, name: "Operations", permissions: ["roles.read"])
     conn = init_test_session(conn, %{"staff_id" => actor.id})
 
     {:ok, list, _} = live(conn, ~p"/staff/roles")
     assert has_element?(list, "#role-card-#{role.id}")
-    list |> element("#role-card-#{role.id} a.cursor-pointer") |> render_click()
+    list |> element("#role-card-#{role.id} td:first-child a[href*='/edit']") |> render_click()
     {edit_url, _flash} = assert_redirect(list)
     assert URI.parse(edit_url).path == ~p"/staff/roles/#{role.id}/edit"
 

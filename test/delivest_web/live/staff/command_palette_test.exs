@@ -20,6 +20,8 @@ defmodule DelivestWeb.Staff.CommandPaletteTest do
     assert has_element?(lv, "#staff-header #command-palette-trigger[aria-label]")
     refute has_element?(lv, "#main-sidebar #command-palette-trigger")
     assert has_element?(lv, "#command-item-page-orders")
+    assert has_element?(lv, "#command-item-page-orders span.text-sm", "Orders")
+    assert has_element?(lv, "#command-item-page-orders_new span.text-sm", "Orders")
     assert has_element?(lv, "#command-item-page-clients")
   end
 

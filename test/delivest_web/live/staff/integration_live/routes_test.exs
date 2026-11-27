@@ -84,5 +84,25 @@ defmodule DelivestWeb.Staff.IntegrationLive.RoutesTest do
 
     assert has_element?(lv, "#routes-no-crm")
     assert has_element?(lv, "#route-toggle-app[disabled]")
+    refute has_element?(lv, "#gateway-summary")
+  end
+
+  test "read-only staff can view gateway ownership on the routes page", %{conn: conn} do
+    branch = insert(:branch)
+
+    Repo.insert!(%BranchInfo{
+      branch_id: branch.id,
+      crm: %BranchSettings{enabled: true, provider: :iiko}
+    })
+
+    {:ok, lv, _html} =
+      live(
+        sign_in(conn, branch, ["integrations.read"]),
+        ~p"/staff/b/#{branch}/integrations/routes"
+      )
+
+    assert has_element?(lv, "#gateway-area-kitchen", "iiko")
+    assert has_element?(lv, "#gateway-area-menu", "Delivest")
+    assert has_element?(lv, "#route-toggle-app[disabled]")
   end
 end

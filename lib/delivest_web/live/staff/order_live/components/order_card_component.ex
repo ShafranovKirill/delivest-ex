@@ -33,10 +33,24 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   def render_card(assigns) do
     crm_managed = Crm.effective_managed?(assigns.order)
     delivery = Couriers.current(assigns.order)
+    address = OrderHelpers.format_address(assigns.order.address)
+
+    customer? =
+      assigns.order.customer_phone not in [nil, ""] or
+        assigns.order.customer_name not in [nil, ""] or assigns.order.client_id != nil
+
+    fulfillment? =
+      (assigns.order.fulfillment_type == :delivery and address not in ["", "—"]) or
+        courier_info(channel_detail(assigns.order, "courier")) != nil or
+        channel_detail(assigns.order, "feedback") not in [nil, %{}] or
+        assigns.order.cook_by != nil or assigns.order.comment not in [nil, ""]
 
     assigns =
       assign(assigns,
         crm_managed: crm_managed,
+        address: address,
+        show_customer: customer?,
+        show_fulfillment: fulfillment?,
         printing: assigns.printing || Delivest.Printing.settings(assigns.current_branch.id),
         status: assigns.order.status,
         delivery: delivery,
@@ -66,8 +80,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
       class={[
         "@container bg-base-100 rounded-box border shadow-sm overflow-hidden transition-colors",
         @status == :created && "border-info ring-2 ring-info/30",
-        @status in [:completed, :cancelled] && "border-base-200 opacity-75",
-        @status not in [:created, :completed, :cancelled] && "border-base-200"
+        @status != :created && "border-base-200"
       ]}
     >
       <header class={[
@@ -158,16 +171,41 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         </div>
       </header>
 
-      <div class="p-3 sm:p-4 grid gap-3 text-sm @3xl:grid-cols-[1fr_1.4fr_1.2fr]">
-        <.customer order={@order} />
-        <.fulfillment
-          order={@order}
-          can_check_code={
-            @status not in [:completed, :cancelled] and
-              Identity.can?(@current_staff, "orders.update")
-          }
-        />
-        <.items order={@order} expanded={@expanded} />
+      <div
+        :if={@show_customer or @show_fulfillment or @order.items != []}
+        class={[
+          "order-card-overview grid gap-3 text-sm",
+          if(@expanded,
+            do: "p-4 sm:p-5 @3xl:grid-cols-2",
+            else: "px-3 py-2.5 sm:px-4 @3xl:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,1.2fr)]"
+          )
+        ]}
+      >
+        <div
+          :if={@show_customer}
+          class="order-card-overview-section"
+        >
+          <h3 :if={@expanded} class="order-card-section-title">{gettext("Client")}</h3>
+          <.customer order={@order} />
+        </div>
+        <div :if={@show_fulfillment} class="order-card-overview-section">
+          <h3 :if={@expanded} class="order-card-section-title">{gettext("Fulfillment")}</h3>
+          <.fulfillment
+            order={@order}
+            address={@address}
+            can_check_code={
+              @status not in [:completed, :cancelled] and
+                Identity.can?(@current_staff, "orders.update")
+            }
+          />
+        </div>
+        <div
+          :if={@order.items != []}
+          class={["order-card-overview-section", @expanded && "@3xl:col-span-2"]}
+        >
+          <h3 :if={@expanded} class="order-card-section-title">{gettext("Products")}</h3>
+          <.items order={@order} expanded={@expanded} />
+        </div>
       </div>
 
       <div
@@ -470,43 +508,46 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
       </footer>
 
       <.payments :if={@expanded} order={@order} />
-      <.receipts order={@order} current_staff={@current_staff} />
+      <.receipts order={@order} current_staff={@current_staff} expanded={@expanded} />
 
-      <ol
-        :if={@history != []}
-        id={"order-history-#{@order.id}"}
-        class="px-3 sm:px-4 py-2 border-t border-base-200 flex flex-wrap gap-x-4 gap-y-1 text-xs text-base-content/60"
-        aria-label={
-          if(@expanded, do: gettext("Who handled the order"), else: gettext("Order history"))
-        }
-      >
-        <li
-          :for={transition <- @history}
-          id={"order-transition-#{transition.id}"}
-          class={[
-            "flex flex-wrap items-center gap-1",
-            transition.reverted_at && "line-through opacity-60"
-          ]}
-          title={
-            transition.revert_reason &&
-              gettext("Reverted: %{reason}", reason: transition.revert_reason)
+      <section :if={@history != []} class={@expanded && "order-card-detail-section"}>
+        <h3 :if={@expanded} class="order-card-section-title">{gettext("Order history")}</h3>
+        <ol
+          id={"order-history-#{@order.id}"}
+          class="px-3 sm:px-4 py-2 border-t border-base-200 flex flex-wrap gap-x-4 gap-y-1 text-xs text-base-content/60"
+          aria-label={
+            if(@expanded, do: gettext("Who handled the order"), else: gettext("Order history"))
           }
         >
-          <span class={["size-1.5 rounded-full", OrderHelpers.status_dot(transition.to)]} />
-          <span class="font-medium text-base-content/80">
-            {OrderHelpers.status_label(transition.to)}
-          </span>
-          <span :if={@expanded}>{actor_label(@order, transition)}</span>
-          <span class="tabular-nums">{OrderHelpers.local_time(transition.inserted_at)}</span>
-          <span
-            :if={
-              @expanded and transition.source == :staff and transition.to in [:delivering, :completed] and
-                transition.reason
+          <li
+            :for={transition <- @history}
+            id={"order-transition-#{transition.id}"}
+            class={[
+              "flex flex-wrap items-center gap-1",
+              transition.reverted_at && "line-through opacity-60"
+            ]}
+            title={
+              transition.revert_reason &&
+                gettext("Reverted: %{reason}", reason: transition.revert_reason)
             }
-            class="min-w-0 break-words"
-          >{transition.reason}</span>
-        </li>
-      </ol>
+          >
+            <span class={["size-1.5 rounded-full", OrderHelpers.status_dot(transition.to)]} />
+            <span class="font-medium text-base-content/80">
+              {OrderHelpers.status_label(transition.to)}
+            </span>
+            <span :if={@expanded}>{actor_label(@order, transition)}</span>
+            <span class="tabular-nums">{OrderHelpers.local_time(transition.inserted_at)}</span>
+            <span
+              :if={
+                @expanded and transition.source == :staff and
+                  transition.to in [:delivering, :completed] and
+                  transition.reason
+              }
+              class="min-w-0 break-words"
+            >{transition.reason}</span>
+          </li>
+        </ol>
+      </section>
     </article>
     """
   end
@@ -529,45 +570,48 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
 
   defp payments(%{order: %{payments: [_ | _]}} = assigns) do
     ~H"""
-    <ul
-      id={"order-payments-#{@order.id}"}
-      class="px-3 sm:px-4 py-2 border-t border-base-200 flex flex-col gap-1 text-xs"
-    >
-      <li
-        :for={payment <- @order.payments}
-        id={"payment-#{payment.id}"}
-        class={[
-          "flex flex-wrap items-center gap-2",
-          payment.status in [:cancelled, :failed] && "opacity-50"
-        ]}
+    <section class="order-card-detail-section">
+      <h3 class="order-card-section-title">{gettext("Payment")}</h3>
+      <ul
+        id={"order-payments-#{@order.id}"}
+        class="px-3 sm:px-4 py-2 border-t border-base-200 flex flex-col gap-1 text-xs"
       >
-        <.icon name="hero-banknotes" class="size-4 text-base-content/60" />
-        <span class="font-medium">{method_label(payment.method)}</span>
-        <span class="tabular-nums">{Delivest.Money.format(payment.amount)}</span>
-        <span class={["badge badge-xs", payment_status_badge(payment.status)]}>
-          {payment_status_label(payment.status)}
-        </span>
-        <span
-          :if={payment.cash_given && payment.cash_given > payment.amount}
-          class="text-base-content/60"
-        >
-          {gettext("change from %{amount}", amount: Delivest.Money.format(payment.cash_given))}
-        </span>
-        <span :if={payment.paid_at} class="tabular-nums text-base-content/60">
-          {OrderHelpers.local_time(payment.paid_at)}
-        </span>
-        <span
-          :for={refund <- payment.refunds}
+        <li
+          :for={payment <- @order.payments}
+          id={"payment-#{payment.id}"}
           class={[
-            "badge badge-xs",
-            refund.status == :failed && "badge-ghost",
-            refund.status != :failed && "badge-error"
+            "flex flex-wrap items-center gap-2",
+            payment.status in [:cancelled, :failed] && "opacity-50"
           ]}
         >
-          {gettext("refund %{amount}", amount: Delivest.Money.format(refund.amount))}
-        </span>
-      </li>
-    </ul>
+          <.icon name="hero-banknotes" class="size-4 text-base-content/60" />
+          <span class="font-medium">{method_label(payment.method)}</span>
+          <span class="tabular-nums">{Delivest.Money.format(payment.amount)}</span>
+          <span class={["badge badge-xs", payment_status_badge(payment.status)]}>
+            {payment_status_label(payment.status)}
+          </span>
+          <span
+            :if={payment.cash_given && payment.cash_given > payment.amount}
+            class="text-base-content/60"
+          >
+            {gettext("change from %{amount}", amount: Delivest.Money.format(payment.cash_given))}
+          </span>
+          <span :if={payment.paid_at} class="tabular-nums text-base-content/60">
+            {OrderHelpers.local_time(payment.paid_at)}
+          </span>
+          <span
+            :for={refund <- payment.refunds}
+            class={[
+              "badge badge-xs",
+              refund.status == :failed && "badge-ghost",
+              refund.status != :failed && "badge-error"
+            ]}
+          >
+            {gettext("refund %{amount}", amount: Delivest.Money.format(refund.amount))}
+          </span>
+        </li>
+      </ul>
+    </section>
     """
   end
 
@@ -604,74 +648,79 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
 
   defp receipts(%{order: %{receipts: [_ | _]}} = assigns) do
     ~H"""
-    <ul
-      id={"order-receipts-#{@order.id}"}
-      class="px-3 sm:px-4 py-2 border-t border-base-200 flex flex-col gap-1 text-xs"
-    >
-      <li
-        :for={receipt <- @order.receipts}
-        id={"receipt-#{receipt.id}"}
-        class="flex items-center gap-2"
+    <section class={@expanded && "order-card-detail-section"}>
+      <h3 :if={@expanded} class="order-card-section-title">{gettext("Receipts")}</h3>
+      <ul
+        id={"order-receipts-#{@order.id}"}
+        class="px-3 sm:px-4 py-2 border-t border-base-200 flex flex-col gap-1 text-xs"
       >
-        <.icon name="hero-receipt-percent" class="size-4 text-base-content/60" />
-        <span class="font-medium">{receipt_kind(receipt.kind)}</span>
-        <span class="tabular-nums">{Delivest.Money.format(receipt.amount)}</span>
-        <span class={["badge badge-xs", receipt_badge(receipt.status)]}>
-          {receipt_status(receipt.status)}
-        </span>
-        <span :if={receipt.status == :fail} class="text-error truncate" title={receipt.error}>
-          {receipt.error}
-        </span>
-        <a
-          :if={Receipt.ofd_url(receipt)}
-          href={Receipt.ofd_url(receipt)}
-          target="_blank"
-          rel="noopener"
-          class="link"
+        <li
+          :for={receipt <- @order.receipts}
+          id={"receipt-#{receipt.id}"}
+          class="flex items-center gap-2"
         >
-          {gettext("Receipt")}
-        </a>
-        <button
-          :if={
-            receipt.status == :fail and not retried?(@order.receipts, receipt) and
-              Identity.can?(@current_staff, "finance.receipts_retry")
-          }
-          type="button"
-          phx-click="retry_receipt"
-          phx-value-id={receipt.id}
-          class="btn btn-ghost btn-xs"
-        >
-          {gettext("Retry")}
-        </button>
-        <button
-          :if={
-            receipt.kind == :sell and receipt.status == :fail and
-              not retried?(@order.receipts, receipt) and Identity.admin_staff?(@current_staff)
-          }
-          type="button"
-          phx-click="correct_receipt"
-          phx-value-id={receipt.id}
-          data-confirm={gettext("Issue a correction receipt? Make sure the original is not in ATOL.")}
-          class="btn btn-ghost btn-xs text-error"
-        >
-          {gettext("Correction")}
-        </button>
-        <button
-          :if={
-            receipt.kind == :sell and receipt.status == :done and
-              not refunded?(@order.receipts, receipt) and
-              Identity.can?(@current_staff, "finance.receipts_refund")
-          }
-          type="button"
-          phx-click="refund_receipt"
-          phx-value-id={receipt.id}
-          data-confirm={gettext("Issue a refund receipt?")}
-          class="btn btn-ghost btn-xs text-error"
-        >
-          {gettext("Issue a refund")}
-        </button>
-      </li>
-    </ul>
+          <.icon name="hero-receipt-percent" class="size-4 text-base-content/60" />
+          <span class="font-medium">{receipt_kind(receipt.kind)}</span>
+          <span class="tabular-nums">{Delivest.Money.format(receipt.amount)}</span>
+          <span class={["badge badge-xs", receipt_badge(receipt.status)]}>
+            {receipt_status(receipt.status)}
+          </span>
+          <span :if={receipt.status == :fail} class="text-error truncate" title={receipt.error}>
+            {receipt.error}
+          </span>
+          <a
+            :if={Receipt.ofd_url(receipt)}
+            href={Receipt.ofd_url(receipt)}
+            target="_blank"
+            rel="noopener"
+            class="link"
+          >
+            {gettext("Receipt")}
+          </a>
+          <button
+            :if={
+              receipt.status == :fail and not retried?(@order.receipts, receipt) and
+                Identity.can?(@current_staff, "finance.receipts_retry")
+            }
+            type="button"
+            phx-click="retry_receipt"
+            phx-value-id={receipt.id}
+            class="btn btn-ghost btn-xs"
+          >
+            {gettext("Retry")}
+          </button>
+          <button
+            :if={
+              receipt.kind == :sell and receipt.status == :fail and
+                not retried?(@order.receipts, receipt) and Identity.admin_staff?(@current_staff)
+            }
+            type="button"
+            phx-click="correct_receipt"
+            phx-value-id={receipt.id}
+            data-confirm={
+              gettext("Issue a correction receipt? Make sure the original is not in ATOL.")
+            }
+            class="btn btn-ghost btn-xs text-error"
+          >
+            {gettext("Correction")}
+          </button>
+          <button
+            :if={
+              receipt.kind == :sell and receipt.status == :done and
+                not refunded?(@order.receipts, receipt) and
+                Identity.can?(@current_staff, "finance.receipts_refund")
+            }
+            type="button"
+            phx-click="refund_receipt"
+            phx-value-id={receipt.id}
+            data-confirm={gettext("Issue a refund receipt?")}
+            class="btn btn-ghost btn-xs text-error"
+          >
+            {gettext("Issue a refund")}
+          </button>
+        </li>
+      </ul>
+    </section>
     """
   end
 
@@ -746,6 +795,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
 
   attr :order, :map, required: true
   attr :can_check_code, :boolean, default: false
+  attr :address, :string, required: true
 
   defp fulfillment(assigns) do
     courier = channel_detail(assigns.order, "courier")
@@ -759,9 +809,12 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
 
     ~H"""
     <div class="min-w-0 space-y-1.5">
-      <p :if={@order.fulfillment_type == :delivery} class="flex gap-1.5 text-base-content/80">
+      <p
+        :if={@order.fulfillment_type == :delivery and @address not in ["", "—"]}
+        class="flex gap-1.5 text-base-content/80"
+      >
         <.icon name="hero-map-pin" class="size-4 shrink-0 text-base-content/40" />
-        <span class="break-words">{OrderHelpers.format_address(@order.address)}</span>
+        <span class="break-words">{@address}</span>
       </p>
       <p
         :if={@courier}
@@ -851,7 +904,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
       )
 
     ~H"""
-    <ul class="order-card-items min-w-0 space-y-1 @3xl:border-l @3xl:border-base-200 @3xl:pl-3">
+    <ul class="order-card-items min-w-0 space-y-1">
       <li :for={item <- @visible_items} class="flex justify-between gap-2">
         <span class="min-w-0 text-base-content/90">
           <span class="flex min-w-0 items-center gap-1">

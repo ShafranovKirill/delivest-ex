@@ -485,33 +485,6 @@ defmodule DelivestWeb.CoreComponents do
     """
   end
 
-  attr :count, :integer, required: true
-  attr :form, :string, required: true
-  attr :on_clear, :any, required: true
-  slot :inner_block, required: true
-
-  def selection_bar(assigns) do
-    ~H"""
-    <div :if={@count > 0} id={"#{@form}-bar"} class="sticky bottom-4 z-20 flex justify-center">
-      <div class="flex items-center gap-2 rounded-box border border-base-300 bg-base-100 py-2 pl-4 pr-2 shadow-lg">
-        <span class="whitespace-nowrap text-sm font-medium">
-          {gettext("Selected: %{count}", count: @count)}
-        </span>
-        {render_slot(@inner_block)}
-        <button
-          type="reset"
-          form={@form}
-          phx-click={@on_clear}
-          class="btn btn-ghost btn-sm btn-square"
-          title={gettext("Clear selection")}
-        >
-          <.icon name="hero-x-mark" class="size-4" />
-        </button>
-      </div>
-    </div>
-    """
-  end
-
   attr :class, :any, default: nil
   attr :rest, :global
   slot :inner_block, required: true
@@ -544,6 +517,8 @@ defmodule DelivestWeb.CoreComponents do
   attr :target, :any, default: nil
   attr :row_label, :any, default: nil
   attr :sort_path, :any, default: nil
+  attr :sort_current, :string, default: nil
+  attr :sort_direction, :string, default: nil
   attr :row_id, :any, default: nil, doc: "the function for generating the row id"
   attr :row_click, :any, default: nil, doc: "the function for handling phx-click on each row"
   attr :staff_id, :string, default: nil, doc: "Employee ID for column preferences"
@@ -566,6 +541,7 @@ defmodule DelivestWeb.CoreComponents do
   end
 
   slot :action, doc: "the slot for showing user actions in the last table column"
+  slot :select_header, doc: "the optional selection control in the first column heading"
 
   def table(assigns) do
     assigns =
@@ -600,47 +576,65 @@ defmodule DelivestWeb.CoreComponents do
                 :for={{col, index} <- Enum.with_index(@col)}
                 scope="col"
                 data-column={column_key(col, index)}
+                aria-sort={
+                  if col[:sort] && @sort_current == col[:sort],
+                    do: if(@sort_direction == "desc", do: "descending", else: "ascending"),
+                    else: nil
+                }
                 class={[
                   col[:numeric] && "text-right",
                   col[:secondary] && "foundation-column-secondary"
                 ]}
               >
-                <%= if col[:sort] && @sort_path do %>
-                  <.link patch={@sort_path.(col[:sort])} class="hover:text-primary">{col[:label]}</.link>
+                <%= if index == 0 and @select_header != [] do %>
+                  {render_slot(@select_header)}
                 <% else %>
-                  <%= if col[:sort] && @meta && @path_fn do %>
-                    <% current_sort? =
-                      @meta.flop.order_by |> List.wrap() |> List.first() |> to_string() == col[:sort] %>
-                    <% direction =
-                      if current_sort? and
-                           @meta.flop.order_directions |> List.wrap() |> List.first() == :asc,
-                         do: "desc",
-                         else: "asc" %>
+                  <%= if col[:sort] && @sort_path do %>
                     <.link
-                      patch={
-                        @path_fn.(%{"order_by" => [col[:sort]], "order_directions" => [direction]})
-                      }
-                      class="flex items-center gap-1 hover:text-primary transition-colors group select-none"
+                      patch={@sort_path.(col[:sort])}
+                      class="inline-flex items-center gap-1 hover:text-primary"
                     >
                       {col[:label]}
-                      <.icon
-                        :if={current_sort? && direction == "desc"}
-                        name="hero-chevron-up"
-                        class="size-4"
-                      />
-                      <.icon
-                        :if={current_sort? && direction == "asc"}
-                        name="hero-chevron-down"
-                        class="size-4"
-                      />
-                      <.icon
-                        :if={!current_sort?}
-                        name="hero-chevron-up-down"
-                        class="size-4 opacity-0 group-hover:opacity-50 transition-opacity"
-                      />
+                      <span :if={@sort_current == col[:sort]} aria-hidden="true">
+                        {if @sort_direction == "desc", do: "↓", else: "↑"}
+                      </span>
                     </.link>
                   <% else %>
-                    {col[:label]}
+                    <%= if col[:sort] && @meta && @path_fn do %>
+                      <% current_sort? =
+                        @meta.flop.order_by |> List.wrap() |> List.first() |> to_string() ==
+                          col[:sort] %>
+                      <% direction =
+                        if current_sort? and
+                             @meta.flop.order_directions |> List.wrap() |> List.first() == :asc,
+                           do: "desc",
+                           else: "asc" %>
+                      <.link
+                        patch={
+                          @path_fn.(%{"order_by" => [col[:sort]], "order_directions" => [direction]})
+                        }
+                        class="flex items-center gap-1 hover:text-primary transition-colors group select-none"
+                      >
+                        {col[:label]}
+                        <.icon
+                          :if={current_sort? && direction == "desc"}
+                          name="hero-chevron-up"
+                          class="size-4"
+                        />
+                        <.icon
+                          :if={current_sort? && direction == "asc"}
+                          name="hero-chevron-down"
+                          class="size-4"
+                        />
+                        <.icon
+                          :if={!current_sort?}
+                          name="hero-chevron-up-down"
+                          class="size-4 opacity-0 group-hover:opacity-50 transition-opacity"
+                        />
+                      </.link>
+                    <% else %>
+                      {col[:label]}
+                    <% end %>
                   <% end %>
                 <% end %>
               </th>
@@ -812,7 +806,12 @@ defmodule DelivestWeb.CoreComponents do
         ]}>
           <div class="p-6 border-b border-base-300 flex items-center justify-between shrink-0">
             <h2 class="text-xl font-display font-bold">{@title}</h2>
-            <button type="button" class="btn btn-ghost btn-square btn-sm" phx-click={@on_close}>
+            <button
+              type="button"
+              class="btn btn-ghost btn-square btn-sm"
+              phx-click={@on_close}
+              aria-label={gettext("Close")}
+            >
               <.icon name="hero-x-mark" class="size-5" />
             </button>
           </div>

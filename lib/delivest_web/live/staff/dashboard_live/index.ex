@@ -278,14 +278,14 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
           id="dashboard-edit"
           type="button"
           phx-click="dashboard_edit"
-          class="btn btn-sm btn-outline"
+          class="staff-page-primary-action btn btn-sm btn-outline"
         ><.icon name="hero-pencil-square" class="size-4" />{gettext("Customize")}</button>
         <button
           :if={@editing_dashboard}
           id="dashboard-save"
           type="button"
           phx-click="dashboard_save"
-          class="btn btn-sm btn-primary"
+          class="staff-page-primary-action btn btn-sm btn-primary"
         >{gettext("Save layout")}</button>
         <button
           :if={@editing_dashboard}
@@ -624,6 +624,7 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
   defp widget_data(assigns) do
     hourly = assigns[:hourly] || []
     yesterday_hourly = assigns[:yesterday_hourly] || []
+    hourly_rows = hourly_rows(hourly, yesterday_hourly, assigns[:current_hour] || -1)
 
     cumulative =
       Enum.map_reduce(hourly, 0, fn row, sum ->
@@ -707,11 +708,8 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
       branch_summary: branch_summary,
       can_stats: assigns.can_stats,
       can_orders: assigns.can_orders,
-      no_hourly_sales:
-        Enum.all?(hourly, &(&1.orders == 0)) and
-          Enum.all?(yesterday_hourly, &(&1.orders == 0)),
-      hourly: hourly,
-      yesterday_hourly: yesterday_hourly,
+      no_hourly_sales: hourly_rows == [],
+      hourly_rows: hourly_rows,
       cumulative: cumulative,
       hourly_chart: %{
         kind: "hourly",
@@ -721,13 +719,10 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
         yesterday_label: gettext("Yesterday"),
         drilldown: not is_nil(assigns.current_branch) and assigns.can_orders,
         revenue_label: gettext("Revenue") <> " (" <> gettext("Before refunds") <> ")",
-        hours: Enum.map(hourly, & &1.hour),
-        orders:
-          Enum.map(hourly, fn row ->
-            if row.hour <= (assigns[:current_hour] || 0), do: row.orders
-          end),
-        yesterday_orders: Enum.map(yesterday_hourly, & &1.orders),
-        revenue: Enum.map(hourly, &OrderHelpers.money(&1.revenue)),
+        hours: Enum.map(hourly_rows, & &1.hour),
+        orders: Enum.map(hourly_rows, & &1.orders),
+        yesterday_orders: Enum.map(hourly_rows, & &1.yesterday_orders),
+        revenue: Enum.map(hourly_rows, &if(&1.revenue, do: OrderHelpers.money(&1.revenue))),
         locale: Gettext.get_locale(DelivestWeb.Gettext)
       },
       cumulative_chart: %{
@@ -744,6 +739,36 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
       branch_by_id: assigns.branch_by_id,
       can_clients: assigns.can_clients
     }
+  end
+
+  @doc false
+  def hourly_rows(today, yesterday, current_hour) do
+    today_by_hour = Map.new(today, &{&1.hour, &1})
+    yesterday_by_hour = Map.new(yesterday, &{&1.hour, &1})
+
+    active_hours =
+      Enum.flat_map(today, fn row ->
+        if row.hour <= current_hour and row.orders > 0, do: [row.hour], else: []
+      end) ++
+        Enum.flat_map(yesterday, fn row -> if row.orders > 0, do: [row.hour], else: [] end)
+
+    case active_hours do
+      [] ->
+        []
+
+      hours ->
+        for hour <- Enum.min(hours)..Enum.max(hours) do
+          today_row = Map.get(today_by_hour, hour, %{orders: 0, revenue: 0})
+          yesterday_row = Map.get(yesterday_by_hour, hour, %{orders: 0})
+
+          %{
+            hour: hour,
+            orders: if(hour <= current_hour, do: today_row.orders),
+            yesterday_orders: yesterday_row.orders,
+            revenue: if(hour <= current_hour, do: today_row.revenue)
+          }
+        end
+    end
   end
 
   defp percent_delta(_current, 0), do: nil

@@ -515,27 +515,22 @@ defmodule DelivestWeb.Staff.ReceiptLive.Printing do
 
   def staff_page_header(assigns) do
     ~H"""
-    <div id="staff-page-header" class="mb-5 flex flex-wrap items-center justify-between gap-3">
-      <div class="flex items-center gap-3">
-        <.link
-          navigate={if @page == :index, do: ~p"/staff/franchise", else: ~p"/staff/franchise/printing"}
-          class="btn btn-outline btn-sm gap-2"
-        >
-          <.icon name="hero-arrow-left" class="size-4" /> Назад
-        </.link>
-        <h1 class="text-2xl font-semibold">{@page_title}</h1>
-      </div>
-      <div :if={@page in [:kitchen, :customer]} class="flex gap-2">
+    <.page_header
+      title={@page_title}
+      back={if @page == :index, do: ~p"/staff/franchise", else: ~p"/staff/franchise/printing"}
+    >
+      <:actions :if={@page in [:kitchen, :customer]}>
         <button type="button" phx-click="preview_pdf" class="btn btn-outline btn-sm">Пробный PDF</button>
         <button
           :if={@can_edit}
           id="save-printing"
           type="button"
           phx-click="save"
+          phx-disable-with={gettext("Saving...")}
           class="btn btn-primary btn-sm"
         >Сохранить</button>
-      </div>
-    </div>
+      </:actions>
+    </.page_header>
     """
   end
 

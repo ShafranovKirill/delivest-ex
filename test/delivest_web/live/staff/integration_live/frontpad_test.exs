@@ -160,7 +160,9 @@ defmodule DelivestWeb.Staff.IntegrationLive.FrontpadTest do
     assert Crm.get_branch_settings(branch.id).frontpad.api_key == "key"
   end
 
-  test "the connection check shows the result here and on the integrations card", %{conn: conn} do
+  test "the connection error persists in provider details while the card stays connected", %{
+    conn: conn
+  } do
     branch = insert(:branch)
 
     Delivest.Repo.insert!(%Delivest.Identity.Branch.BranchInfo{
@@ -184,8 +186,12 @@ defmodule DelivestWeb.Staff.IntegrationLive.FrontpadTest do
 
     assert lv |> element("#frontpad-health-check") |> render_click() =~ "Access error"
 
-    {:ok, _lv, html} = live(conn, ~p"/staff/b/#{branch}/integrations")
-    assert html =~ "Error"
+    {:ok, overview, _html} = live(conn, ~p"/staff/b/#{branch}/integrations")
+    assert has_element?(overview, "#integration-frontpad-state", ~r/^Connected$/)
+
+    {:ok, reopened, _html} = live(conn, ~p"/staff/b/#{branch}/integrations/frontpad")
+    reopened |> element("button[phx-value-tab=settings]") |> render_click()
+    assert render(reopened) =~ "Access error"
 
     Req.Test.stub(
       Delivest.HTTP.Client,

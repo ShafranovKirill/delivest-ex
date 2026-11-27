@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Staff.DeliveryLive.Couriers do
   use DelivestWeb, :live_view
-  import DelivestWeb.Staff.FoundationComponents, only: [error_summary: 1, changeset_errors: 1]
+
+  import DelivestWeb.Staff.FoundationComponents,
+    only: [error_summary: 1, changeset_errors: 1, form_section: 1]
 
   alias Delivest.{Couriers, Identity}
   alias Delivest.Identity.Branch.CourierSettings
@@ -32,7 +34,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.Couriers do
         {:noreply,
          socket
          |> put_flash(:info, gettext("Settings saved"))
-         |> push_event("staff:form-saved", %{})
+         |> push_event("staff:form-saved", %{id: "couriers-form"})
          |> push_navigate(to: ~p"/staff/b/#{socket.assigns.current_branch}/delivery")}
 
       {:error, :info, %Ecto.Changeset{}} ->
@@ -45,7 +47,8 @@ defmodule DelivestWeb.Staff.DeliveryLive.Couriers do
            )
            |> Map.put(:action, :validate)
          )
-         |> put_flash(:error, gettext("Failed to save"))}
+         |> put_flash(:error, gettext("Failed to save"))
+         |> push_event("staff:form-failed", %{id: "couriers-form"})}
 
       {:error, _reason} ->
         {:noreply,
@@ -57,7 +60,8 @@ defmodule DelivestWeb.Staff.DeliveryLive.Couriers do
            )
            |> Map.put(:action, :validate)
          )
-         |> put_flash(:error, gettext("Permission denied"))}
+         |> put_flash(:error, gettext("Permission denied"))
+         |> push_event("staff:form-failed", %{id: "couriers-form"})}
     end
   end
 
@@ -114,22 +118,24 @@ defmodule DelivestWeb.Staff.DeliveryLive.Couriers do
           errors={changeset_errors(@form.source)}
           form_name="couriers"
         />
-        <div class="grid gap-4 sm:grid-cols-2">
-          <.input
-            field={@form[:source]}
-            type="select"
-            label={gettext("Couriers")}
-            options={sources()}
-            disabled={not @can_edit}
-          />
-          <.input
-            field={@form[:search]}
-            type="select"
-            label={gettext("Find a courier")}
-            options={searches()}
-            disabled={not @can_edit}
-          />
-        </div>
+        <.form_section id="couriers-settings-section" title={gettext("Settings")}>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <.input
+              field={@form[:source]}
+              type="select"
+              label={gettext("Couriers")}
+              options={sources()}
+              disabled={not @can_edit}
+            />
+            <.input
+              field={@form[:search]}
+              type="select"
+              label={gettext("Find a courier")}
+              options={searches()}
+              disabled={not @can_edit}
+            />
+          </div>
+        </.form_section>
       </.form>
     </div>
     """

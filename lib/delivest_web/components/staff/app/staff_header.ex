@@ -21,11 +21,11 @@ defmodule DelivestWeb.StaffHeader do
     ~H"""
     <header
       id="staff-header"
-      class="staff-header fixed inset-x-0 top-0 z-30 flex h-14 items-center gap-3 border-b border-base-300 bg-base-100 px-3 lg:pl-6"
+      class="staff-header fixed inset-x-0 top-0 z-30 flex h-14 items-center gap-2 bg-base-100 px-3 lg:pl-6"
     >
       <div
         id="staff-header-sidebar-controls"
-        class="staff-header-sidebar-controls shrink-0 items-center gap-1"
+        class="staff-header-sidebar-controls flex shrink-0 items-center gap-1"
       >
         <button
           id="header-sidebar-toggle"
@@ -38,12 +38,17 @@ defmodule DelivestWeb.StaffHeader do
           aria-expanded="false"
           aria-label={gettext("Expand menu")}
           title={gettext("Expand menu")}
-          class="btn btn-square h-10 min-h-10 w-10 shrink-0 rounded-field border border-base-300 bg-base-100 hover:bg-base-200"
+          class="btn btn-ghost btn-square h-8 min-h-8 w-8 shrink-0 rounded-field border border-base-300 hover:bg-base-200"
         >
           <.icon name="panel-left" class="size-5" />
         </button>
       </div>
-      <div class="flex w-56 max-w-[55vw] shrink-0 items-center">
+      <span
+        id="staff-header-separator"
+        aria-hidden="true"
+        class="h-6 w-px shrink-0 bg-base-300"
+      />
+      <div class="flex w-fit max-w-[40vw] min-w-0 items-center">
         <DelivestWeb.BranchSwitcher.branch_switcher
           current_branch={@scope_branch}
           branches={@staff_branches}
@@ -62,11 +67,11 @@ defmodule DelivestWeb.StaffHeader do
         />
       </div>
       <div class="ml-auto flex shrink-0 items-center gap-2">
-        <DelivestWeb.CommandPalette.command_palette_trigger icon_only />
         <DelivestWeb.KitchenControl.kitchen_indicator
           :if={working_context?(@current_path)}
           status={@kitchen_status}
         />
+        <DelivestWeb.CommandPalette.command_palette_trigger />
       </div>
     </header>
     """

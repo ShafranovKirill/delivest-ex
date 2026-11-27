@@ -4,6 +4,46 @@ defmodule DelivestWeb.Staff.DashboardLive.IndexTest do
   import Phoenix.LiveViewTest
   import Delivest.Factory
 
+  alias DelivestWeb.Staff.DashboardLive.Index
+
+  describe "hourly chart rows" do
+    test "trims to active bounds and keeps internal zero hours" do
+      today = [%{hour: 9, orders: 2, revenue: 1_000}, %{hour: 11, orders: 1, revenue: 500}]
+
+      assert Index.hourly_rows(today, [], 12) == [
+               %{hour: 9, orders: 2, yesterday_orders: 0, revenue: 1_000},
+               %{hour: 10, orders: 0, yesterday_orders: 0, revenue: 0},
+               %{hour: 11, orders: 1, yesterday_orders: 0, revenue: 500}
+             ]
+    end
+
+    test "aligns today and yesterday by local hour" do
+      today = [%{hour: 8, orders: 1, revenue: 300}]
+      yesterday = [%{hour: 10, orders: 4, revenue: 1_200}]
+
+      assert Index.hourly_rows(today, yesterday, 12) == [
+               %{hour: 8, orders: 1, yesterday_orders: 0, revenue: 300},
+               %{hour: 9, orders: 0, yesterday_orders: 0, revenue: 0},
+               %{hour: 10, orders: 0, yesterday_orders: 4, revenue: 0}
+             ]
+    end
+
+    test "keeps yesterday-only future hours and masks today's values" do
+      today = [%{hour: 18, orders: 5, revenue: 2_000}]
+      yesterday = [%{hour: 14, orders: 2, revenue: 900}]
+
+      assert Index.hourly_rows(today, yesterday, 12) == [
+               %{hour: 14, orders: nil, yesterday_orders: 2, revenue: nil}
+             ]
+    end
+
+    test "returns no rows when neither day has orders" do
+      today = [%{hour: 7, orders: 0, revenue: 0}]
+      yesterday = [%{hour: 8, orders: 0, revenue: 0}]
+      assert Index.hourly_rows(today, yesterday, 12) == []
+    end
+  end
+
   describe "dashboard page" do
     test "network and branch dashboards show compact empty hourly state without the historical heatmap",
          %{

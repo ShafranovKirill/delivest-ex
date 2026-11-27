@@ -52,18 +52,15 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/integrations")
 
     assert has_element?(lv, "#integration-frontpad", "Frontpad")
-    assert has_element?(lv, "#integration-zvonok")
+    assert has_element?(lv, "#integration-zvonok", "Zvonok")
+    assert has_element?(lv, "#integration-dadata", "DaData")
+    assert has_element?(lv, "#integration-yookassa", "ЮKassa")
+    assert has_element?(lv, "#integration-fiscal", "АТОЛ Онлайн")
     refute has_element?(lv, "a#integration-zvonok")
 
-    assert has_element?(
-             lv,
-             "#integration-frontpad-details:not([open]) > summary",
-             "Connection details"
-           )
-
-    assert has_element?(lv, "#integration-frontpad-credentials", "Filled in")
-    assert has_element?(lv, "#integration-frontpad-connection")
-    assert has_element?(lv, "#integration-frontpad-usage")
+    assert has_element?(lv, "#integration-frontpad-state", "Not connected")
+    refute has_element?(lv, "#integration-frontpad-details")
+    refute has_element?(lv, "#integration-frontpad-credentials")
 
     assert has_element?(
              lv,
@@ -82,13 +79,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
 
     refute has_element?(lv, "a#integration-zvonok")
 
-    assert has_element?(
-             lv,
-             "#integration-zvonok-details:not([open]) > summary",
-             "Connection details"
-           )
-
-    refute has_element?(lv, "#integration-yandex-ads-details")
+    assert has_element?(lv, "#integration-zvonok-state", "Not connected")
+    refute has_element?(lv, "#integration-zvonok-details")
     assert has_element?(lv, "#header-branch-#{branch.id}")
     refute has_element?(lv, "#integration-branch-selector")
     refute has_element?(lv, "#integration-frontpad")
@@ -124,7 +116,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
            )
   end
 
-  test "connection details show status without revealing stored credentials", %{
+  test "overview links to settings without showing connection details or credentials", %{
     conn: conn,
     branch: branch
   } do
@@ -142,7 +134,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
              "a#integration-frontpad[href='/staff/b/#{branch.slug}/integrations/frontpad']"
            )
 
-    assert has_element?(lv, "#integration-frontpad-details:not([open]) > summary")
+    refute has_element?(lv, "#integration-frontpad-details")
+    refute has_element?(lv, "#integration-frontpad-credentials")
     refute render(lv) =~ secret
   end
 
@@ -155,7 +148,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
     assert flash["error"] == "Permission denied"
   end
 
-  test "global branch selection shows gateway ownership from the selected branch", %{
+  test "global branch selection keeps provider navigation without gateway diagnostics", %{
     conn: conn,
     branch: branch
   } do
@@ -166,8 +159,13 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
 
     {:ok, lv, _html} = live(conn, ~p"/staff/integrations?branch=#{branch.slug}")
 
-    assert has_element?(lv, "#gateway-area-kitchen", "iiko")
-    assert has_element?(lv, "#gateway-area-menu", "Delivest")
+    assert has_element?(
+             lv,
+             "a#integration-iiko[href='/staff/b/#{branch.slug}/integrations/iiko']"
+           )
+
+    refute has_element?(lv, "#gateway-area-kitchen")
+    refute has_element?(lv, "#gateway-area-menu")
   end
 
   test "network permission hides the integration and blocks configuration", %{

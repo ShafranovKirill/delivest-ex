@@ -11,17 +11,18 @@ defmodule DelivestWeb.KitchenControl do
     ~H"""
     <span
       id="kitchen-indicator"
+      title={label(@status)}
       class={[
-        "hidden items-center gap-1.5 rounded-field px-2 py-1 text-xs font-semibold md:flex",
+        "hidden h-8 min-h-8 max-w-32 items-center gap-1.5 rounded-field px-2 py-1 text-xs font-semibold min-[720px]:flex",
         @status == :online && "bg-success/15 text-success",
         @status != :online && "bg-error/10 text-error"
       ]}
     >
       <span class={[
-        "size-2 rounded-full",
+        "size-2 shrink-0 rounded-full",
         if(@status == :online, do: "bg-success", else: "bg-error")
       ]} />
-      {label(@status)}
+      <span class="truncate">{label(@status)}</span>
     </span>
     """
   end
@@ -33,9 +34,6 @@ defmodule DelivestWeb.KitchenControl do
     <div
       :if={@orders != []}
       id="kitchen-late-orders"
-      phx-hook="Alarm"
-      data-count={length(@orders)}
-      data-tones="523,440,523,440"
       class="fixed bottom-4 right-4 z-40 w-80 rounded-box border border-error bg-base-100 p-4 shadow-xl"
     >
       <h3 class="flex items-center gap-2 font-bold text-error">

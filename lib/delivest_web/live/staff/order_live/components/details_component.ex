@@ -23,7 +23,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.DetailsComponent do
       phx-change="validate_order"
       data-staff-dirty
       phx-submit="save_order"
-      class="space-y-5"
+      class="space-y-3 pb-1"
     >
       <.error_summary
         id="order-details-errors"
@@ -164,14 +164,16 @@ defmodule DelivestWeb.Staff.OrderLive.Components.DetailsComponent do
         />
       </.section>
 
-      <.input
-        field={@form[:comment]}
-        type="textarea"
-        label={gettext("Comment")}
-        rows={2}
-        maxlength="500"
-        phx-debounce="300"
-      />
+      <div class="rounded-box border border-base-300 bg-base-100 p-3 sm:p-4">
+        <.input
+          field={@form[:comment]}
+          type="textarea"
+          label={gettext("Comment")}
+          rows={2}
+          maxlength="500"
+          phx-debounce="300"
+        />
+      </div>
     </.form>
     """
   end
@@ -181,8 +183,8 @@ defmodule DelivestWeb.Staff.OrderLive.Components.DetailsComponent do
 
   defp section(assigns) do
     ~H"""
-    <section>
-      <h3 class="mb-2 text-xs font-bold uppercase tracking-wide text-base-content/50">{@title}</h3>
+    <section class="rounded-box border border-base-300 bg-base-100 p-3 sm:p-4">
+      <h3 class="mb-3 text-sm font-semibold text-base-content">{@title}</h3>
       {render_slot(@inner_block)}
     </section>
     """

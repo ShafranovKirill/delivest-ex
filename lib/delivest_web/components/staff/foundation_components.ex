@@ -229,6 +229,8 @@ defmodule DelivestWeb.Staff.FoundationComponents do
 
   attr :id, :string, required: true
   attr :count, :integer, required: true
+  attr :clear_event, :any, default: nil
+  attr :target, :any, default: nil
   slot :inner_block
 
   def bulk_action_bar(assigns) do
@@ -236,11 +238,18 @@ defmodule DelivestWeb.Staff.FoundationComponents do
     <div
       :if={@count > 0}
       id={@id}
-      role="status"
-      class="flex flex-wrap items-center gap-3 rounded-box border border-base-300 bg-base-100 p-3"
+      class="sticky bottom-4 z-20 mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-3 rounded-box border border-base-300 bg-base-100 p-3 shadow-lg"
     >
-      <strong>{gettext("Selected %{count} on this page", count: @count)}</strong>
+      <strong role="status">{gettext("Selected %{count} on this page", count: @count)}</strong>
       {render_slot(@inner_block)}
+      <button
+        :if={@clear_event}
+        id={"#{@id}-clear"}
+        type="button"
+        phx-click={@clear_event}
+        phx-target={@target}
+        class="btn btn-ghost btn-sm"
+      >{gettext("Clear selection")}</button>
     </div>
     """
   end
