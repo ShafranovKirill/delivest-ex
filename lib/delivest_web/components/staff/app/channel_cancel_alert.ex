@@ -14,9 +14,6 @@ defmodule DelivestWeb.ChannelCancelAlert do
       :if={@orders != []}
       id="channel-cancelled-orders"
       class="modal modal-open"
-      phx-hook="Alarm"
-      data-count={length(@orders)}
-      data-tones="880,660,440,880,660,440"
     >
       <div class="modal-box max-w-lg border border-error/40">
         <h3 class="flex items-center gap-2 text-lg font-bold text-error">

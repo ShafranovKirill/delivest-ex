@@ -40,6 +40,11 @@ defmodule DelivestWeb.Staff.StaffShellTest do
     assert has_element?(lv, "#staff-profile-menu #header-push-toggle")
     assert has_element?(lv, "#staff-profile-menu a[href='/staff/auth/log_out']")
     assert has_element?(lv, "#staff-profile-menu #app-version")
+
+    assert has_element?(
+             lv,
+             "#staff-alert-tracker[hidden][data-branch-id='#{branch.id}'][data-overdue-ids=''][data-kitchen-late-ids=''][data-channel-cancelled-ids='']"
+           )
   end
 
   test "limited staff keeps profile controls without order sound or settings", %{conn: conn} do

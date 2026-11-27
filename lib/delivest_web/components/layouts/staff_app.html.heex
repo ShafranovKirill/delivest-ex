@@ -56,6 +56,17 @@
     return_source={assigns[:current_uri] || assigns[:current_path]}
   />
 
+  <div
+    id="staff-alert-tracker"
+    phx-hook="Alarm"
+    hidden
+    data-branch-id={assigns[:current_branch] && assigns[:current_branch].id}
+    data-overdue-ids={Enum.map_join(assigns[:overdue_orders] || [], ",", & &1.id)}
+    data-kitchen-late-ids={Enum.map_join(assigns[:kitchen_late_orders] || [], ",", & &1.id)}
+    data-channel-cancelled-ids={
+      Enum.map_join(assigns[:channel_cancelled_orders] || [], ",", & &1.id)
+    }
+  />
   <DelivestWeb.OverdueOrdersAlert.overdue_orders_alert orders={assigns[:overdue_orders] || []} />
   <DelivestWeb.KitchenControl.kitchen_late_alert orders={assigns[:kitchen_late_orders] || []} />
   <DelivestWeb.ChannelCancelAlert.channel_cancel_alert orders={

@@ -1,5 +1,10 @@
-const tones = (el) =>
-  (el.dataset.tones || "660,880,660,880").split(",").map(Number).filter(Boolean);
+const alertTones = {
+  overdueIds: [660, 880, 660, 880],
+  kitchenLateIds: [523, 440, 523, 440],
+  channelCancelledIds: [880, 660, 440, 880, 660, 440],
+};
+
+const alertIds = (el, kind) => new Set((el.dataset[kind] || "").split(",").filter(Boolean));
 
 export const ring = (frequencies) => {
   if (localStorage.getItem("orders-sound") === "off") return;
@@ -23,12 +28,23 @@ export const ring = (frequencies) => {
 
 export const Alarm = {
   mounted() {
-    this.count = Number(this.el.dataset.count);
-    ring(tones(this.el));
+    this.branchId = this.el.dataset.branchId || "";
+    this.alerts = Object.fromEntries(
+      Object.keys(alertTones).map((kind) => [kind, alertIds(this.el, kind)]),
+    );
   },
   updated() {
-    const count = Number(this.el.dataset.count);
-    if (count > this.count) ring(tones(this.el));
-    this.count = count;
+    const branchId = this.el.dataset.branchId || "";
+    const branchChanged = branchId !== this.branchId;
+
+    for (const [kind, frequencies] of Object.entries(alertTones)) {
+      const current = alertIds(this.el, kind);
+      if (!branchChanged && [...current].some((id) => !this.alerts[kind].has(id))) {
+        ring(frequencies);
+      }
+      this.alerts[kind] = current;
+    }
+
+    this.branchId = branchId;
   },
 };

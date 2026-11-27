@@ -33,9 +33,6 @@ defmodule DelivestWeb.KitchenControl do
     <div
       :if={@orders != []}
       id="kitchen-late-orders"
-      phx-hook="Alarm"
-      data-count={length(@orders)}
-      data-tones="523,440,523,440"
       class="fixed bottom-4 right-4 z-40 w-80 rounded-box border border-error bg-base-100 p-4 shadow-xl"
     >
       <h3 class="flex items-center gap-2 font-bold text-error">
