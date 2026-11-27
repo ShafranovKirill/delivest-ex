@@ -349,14 +349,14 @@ defmodule DelivestWeb.Staff.PosLive.Index do
               <div class="flex flex-wrap gap-2">
                 <label
                   :for={modifier <- group.modifiers}
-                  class="btn btn-lg h-auto has-checked:btn-primary"
+                  class="btn btn-lg h-auto has-checked:btn-primary focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary"
                 >
                   <input
                     type={if group.max == 1, do: "radio", else: "checkbox"}
                     name={"modifiers[#{group.id}][]"}
                     value={modifier.id}
                     checked={modifier.is_default}
-                    class="hidden"
+                    class="sr-only"
                   />
                   {modifier.name}
                   <span :if={modifier.price > 0} class="font-mono text-sm">
@@ -561,6 +561,7 @@ defmodule DelivestWeb.Staff.PosLive.Index do
             :if={!Map.get(item, :gift, false)}
             phx-click="less"
             phx-value-key={key(item)}
+            aria-label={gettext("Decrease quantity of %{name}", name: item.name)}
             class="btn btn-square"
           >
             <.icon name="hero-minus" class="size-4" />
@@ -570,6 +571,7 @@ defmodule DelivestWeb.Staff.PosLive.Index do
             :if={!Map.get(item, :gift, false)}
             phx-click="more"
             phx-value-key={key(item)}
+            aria-label={gettext("Increase quantity of %{name}", name: item.name)}
             class="btn btn-square"
           >
             <.icon name="hero-plus" class="size-4" />
@@ -588,6 +590,7 @@ defmodule DelivestWeb.Staff.PosLive.Index do
           <button
             phx-click="clear"
             disabled={@cart.items == []}
+            aria-label={gettext("Clear the check")}
             data-confirm={gettext("Clear the check?")}
             class="btn btn-lg btn-ghost"
           >

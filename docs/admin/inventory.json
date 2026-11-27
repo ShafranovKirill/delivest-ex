@@ -216,7 +216,7 @@
         "inline": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/auth_live/login.ex:138",
+      "source": "lib/delivest_web/live/staff/auth_live/login.ex:139",
       "target_section": "System / staff service"
     },
     {
@@ -6342,7 +6342,7 @@
       "handler_clauses": [
         "event:lib/delivest_web/live/staff/pos_live/index.ex:clear:b7b931e46008929a:1"
       ],
-      "id": "control:lib/delivest_web/live/staff/pos_live/index.ex:clear:signature:623d8849232183ce:1",
+      "id": "control:lib/delivest_web/live/staff/pos_live/index.ex:clear:signature:181ca8eefe3587ad:1",
       "label": "unlabelled/icon control at source anchor",
       "operation": [
         "Oms.clear_cart"
@@ -6352,7 +6352,7 @@
         "inline": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/pos_live/index.ex:588",
+      "source": "lib/delivest_web/live/staff/pos_live/index.ex:590",
       "target_section": "Orders"
     },
     {
@@ -6445,7 +6445,7 @@
       "handler_clauses": [
         "event:lib/delivest_web/live/staff/pos_live/index.ex:less:51771c074638a471:1"
       ],
-      "id": "control:lib/delivest_web/live/staff/pos_live/index.ex:less:signature:97806c2a2be6fbdb:1",
+      "id": "control:lib/delivest_web/live/staff/pos_live/index.ex:less:signature:843fabfa32ed505e:1",
       "label": "unlabelled/icon control at source anchor",
       "operation": [
         "Oms.remove_item"
@@ -6513,7 +6513,7 @@
       "handler_clauses": [
         "event:lib/delivest_web/live/staff/pos_live/index.ex:more:ad95483c901f51b2:1"
       ],
-      "id": "control:lib/delivest_web/live/staff/pos_live/index.ex:more:signature:299a13dbeb7ea860:1",
+      "id": "control:lib/delivest_web/live/staff/pos_live/index.ex:more:signature:39aea2f316a75a18:1",
       "label": "unlabelled/icon control at source anchor",
       "operation": [
         "Carts.parse_item_key"
@@ -6523,7 +6523,7 @@
         "inline": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/pos_live/index.ex:569",
+      "source": "lib/delivest_web/live/staff/pos_live/index.ex:570",
       "target_section": "Orders"
     },
     {
@@ -6546,7 +6546,7 @@
         "inline": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/pos_live/index.ex:596",
+      "source": "lib/delivest_web/live/staff/pos_live/index.ex:599",
       "target_section": "Orders"
     },
     {
@@ -22611,7 +22611,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "login",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/auth_live/login.ex:148",
+      "source": "lib/delivest_web/live/staff/auth_live/login.ex:149",
       "target_section": "Staff authentication",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -22632,7 +22632,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "password",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/auth_live/login.ex:154",
+      "source": "lib/delivest_web/live/staff/auth_live/login.ex:156",
       "target_section": "Staff authentication",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"

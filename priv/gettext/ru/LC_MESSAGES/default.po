@@ -14236,3 +14236,21 @@ msgstr "Сумма оплаты ЮKassa не совпадает с итогом 
 #, elixir-autogen, elixir-format
 msgid "Not connected"
 msgstr "Не подключено"
+
+msgid "The page you requested is unavailable."
+msgstr "Запрошенная страница недоступна."
+
+msgid "Try again in a moment."
+msgstr "Попробуйте ещё раз через некоторое время."
+
+msgid "Decrease quantity of %{name}"
+msgstr "Уменьшить количество «%{name}»"
+
+msgid "Increase quantity of %{name}"
+msgstr "Увеличить количество «%{name}»"
+
+msgid "Home"
+msgstr "На главную"
+
+msgid "Clear the check"
+msgstr "Очистить чек"

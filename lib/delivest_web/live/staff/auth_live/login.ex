@@ -85,7 +85,7 @@ defmodule DelivestWeb.Staff.AuthLive.Login do
     assigns = assign(assigns, :current_locale, Gettext.get_locale(DelivestWeb.Gettext))
 
     ~H"""
-    <div class="fixed right-4 top-4 z-60 flex items-center gap-2">
+    <div class="absolute right-4 top-4 z-10 flex items-center gap-2">
       <.link
         :if={@current_locale == "ru"}
         href={~p"/locale/en"}
@@ -104,12 +104,13 @@ defmodule DelivestWeb.Staff.AuthLive.Login do
         <span>RU</span>
       </.link>
 
-      <label class="btn btn-ghost btn-sm btn-square swap swap-rotate h-10 w-10 rounded-lg border border-base-300 bg-base-100/90 shadow-sm backdrop-blur-sm hover:bg-base-200">
+      <label class="btn btn-ghost btn-sm btn-square swap swap-rotate h-10 w-10 rounded-lg border border-base-300 bg-base-100/90 shadow-sm backdrop-blur-sm hover:bg-base-200 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary">
         <input
           type="checkbox"
           id="theme-toggle-login"
           phx-hook="ThemeToggle"
-          class="theme-controller hidden"
+          class="theme-controller sr-only"
+          aria-label={gettext("Dark theme")}
           value="dark"
         />
         <.icon name="hero-sun" class="swap-off h-5 w-5" />
@@ -117,13 +118,13 @@ defmodule DelivestWeb.Staff.AuthLive.Login do
       </label>
     </div>
 
-    <div class="min-h-screen flex-1 flex flex-col items-center justify-center p-4">
+    <div class="min-h-screen flex-1 flex flex-col items-center justify-center px-4 pb-4 pt-20">
       <div class="card w-full max-w-md">
         <div class="card-body gap-4 p-6">
           <div class="text-center">
-            <h2 class="text-2xl font-display font-bold uppercase">
+            <h1 class="text-2xl font-display font-bold uppercase">
               {gettext("Welcome to Delivest CRM")}
-            </h2>
+            </h1>
             <p class="text-base-content/60 text-sm">
               {gettext("Sign in to your account to continue")}
             </p>
@@ -147,12 +148,14 @@ defmodule DelivestWeb.Staff.AuthLive.Login do
             <.input
               field={@form[:login]}
               type="text"
+              autocomplete="username"
               label={gettext("login")}
               placeholder={gettext("Enter your login")}
             />
             <.input
               field={@form[:password]}
               type="password"
+              autocomplete="current-password"
               label={gettext("Password")}
               placeholder="••••••••"
             />
