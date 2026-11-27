@@ -16,7 +16,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CartComponent do
       :if={@cart.items == []}
       icon="hero-shopping-cart"
       title={gettext("Cart is empty")}
-      class="h-64"
+      class="h-24"
     />
 
     <div :if={@cart.items != []}>
@@ -80,6 +80,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CartComponent do
               type="button"
               phx-click="remove_item"
               phx-value-product-id={Map.get(item, :key, item.product_id)}
+              aria-label={gettext("Remove") <> " " <> item.name}
               class="btn btn-xs btn-square btn-ghost"
             >
               <.icon name="hero-minus" class="size-3" />
@@ -89,6 +90,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CartComponent do
               type="button"
               phx-click="add_item"
               phx-value-product-id={Map.get(item, :key, item.product_id)}
+              aria-label={gettext("Add") <> " " <> item.name}
               class="btn btn-xs btn-square btn-ghost"
             >
               <.icon name="hero-plus" class="size-3" />
@@ -97,6 +99,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CartComponent do
               type="button"
               phx-click="delete_item"
               phx-value-product-id={Map.get(item, :key, item.product_id)}
+              aria-label={gettext("Delete") <> " " <> item.name}
               class="btn btn-xs btn-square btn-ghost text-error"
             >
               <.icon name="hero-trash" class="size-3.5" />

@@ -314,8 +314,12 @@ defmodule DelivestWeb.Staff.OrderLive.OrderFormTest do
   } do
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders/new")
     render_click(lv, "add_item", %{"product-id" => product.id})
-    render_click(lv, "toggle_mobile_cart", %{})
 
+    lv
+    |> element("button[phx-click='toggle_mobile_cart'][aria-expanded='false']")
+    |> render_click()
+
+    assert has_element?(lv, "button[phx-click='toggle_mobile_cart'][aria-expanded='true']")
     refute has_element?(lv, "#mobile-cart-out-of-stock-#{product.id}")
   end
 

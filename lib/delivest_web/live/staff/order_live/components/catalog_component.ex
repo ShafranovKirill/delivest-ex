@@ -151,26 +151,28 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
       </div>
 
       <div class="flex max-h-[55%] min-h-0 flex-col overflow-clip border-t border-base-300 bg-base-100 lg:hidden">
-        <div
+        <button
+          type="button"
           phx-click="toggle_mobile_cart"
-          class="flex shrink-0 cursor-pointer select-none items-center justify-between border-b border-base-200 bg-base-200/50 px-3 py-1.5"
+          aria-expanded={to_string(@mobile_cart_expanded)}
+          class="flex w-full shrink-0 cursor-pointer select-none items-center justify-between border-b border-base-200 bg-base-200/50 px-3 py-1.5 text-left focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]"
         >
-          <div class="flex items-center gap-2">
+          <span class="flex items-center gap-2">
             <.icon name="hero-shopping-bag" class="size-5 text-primary" />
             <span class="font-bold text-sm">{gettext("Cart")}</span>
             <span class="badge badge-primary badge-sm font-mono font-bold">
               {@cart.total_quantity}
             </span>
-          </div>
+          </span>
 
-          <div class="flex items-center gap-2">
+          <span class="flex items-center gap-2">
             <span class="font-mono font-bold text-base">{OrderHelpers.money(@cart.total_amount)}</span>
             <.icon
               name={if @mobile_cart_expanded, do: "hero-chevron-down", else: "hero-chevron-up"}
               class="size-5 text-base-content/60"
             />
-          </div>
-        </div>
+          </span>
+        </button>
 
         <%= if @mobile_cart_expanded do %>
           <div class="min-h-0 max-h-60 space-y-2 overflow-y-auto overscroll-y-contain bg-base-100 px-3 py-1">
@@ -221,6 +223,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
                       type="button"
                       phx-click="remove_item"
                       phx-value-product-id={Map.get(item, :key, item.product_id)}
+                      aria-label={gettext("Remove") <> " " <> item.name}
                       class="btn btn-xs btn-square btn-ghost"
                     >
                       <.icon name="hero-minus" class="size-3" />
@@ -230,6 +233,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
                       type="button"
                       phx-click="add_item"
                       phx-value-product-id={Map.get(item, :key, item.product_id)}
+                      aria-label={gettext("Add") <> " " <> item.name}
                       class="btn btn-xs btn-square btn-ghost"
                     >
                       <.icon name="hero-plus" class="size-3" />
