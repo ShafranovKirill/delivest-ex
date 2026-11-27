@@ -109,6 +109,19 @@ a.dashboard-attention-label:hover { color: var(--color-primary); opacity: 1; tex
   transition: border-color .15s, background-color .15s;
 }
 .dashboard-action-link:hover, .dashboard-action-link:focus-visible { background: var(--color-base-200); }
+[data-theme="dark"] .foundation-shell :is(#dashboard-edit, #dashboard-grid .dashboard-action-link) {
+  background-color: #fff;
+  border-color: transparent;
+  color: #000;
+  box-shadow: none;
+}
+[data-theme="dark"] .foundation-shell :is(#dashboard-edit, #dashboard-grid .dashboard-action-link):hover {
+  background-color: oklch(.929 .013 255.508);
+}
+[data-theme="dark"] .foundation-shell :is(#dashboard-edit, #dashboard-grid .dashboard-action-link):focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
 @media (max-width: 700px) { .dashboard-branch-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .dashboard-widget-controls {
   display: flex;
