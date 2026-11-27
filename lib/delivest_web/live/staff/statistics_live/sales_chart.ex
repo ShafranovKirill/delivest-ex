@@ -57,7 +57,10 @@ defmodule DelivestWeb.Staff.StatisticsLive.SalesChart do
       id={@chart_id}
       class={[
         "min-w-0",
-        if(@compact, do: "", else: "rounded-box border border-base-300 bg-base-100 p-4")
+        if(@compact,
+          do: "",
+          else: "statistics-panel rounded-box border border-base-300 bg-base-100 p-4"
+        )
       ]}
     >
       <h2 class="font-semibold">{@title || metric_label(@metric)}</h2>

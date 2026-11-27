@@ -199,6 +199,12 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportsTest do
     refute has_element?(view, "#statistics-report-state", "Last successful check")
     refute has_element?(view, "#statistics-report-state", "Oldest successful bucket")
     assert has_element?(view, "#statistics-report-summary", "Average check")
+
+    assert has_element?(
+             view,
+             "#statistics-report-summary .statistics-metric-card .statistics-metric-icon"
+           )
+
     assert has_element?(view, "#statistics-report-summary", OrderHelpers.money(750))
     assert has_element?(view, "#statistics-report-summary", "Cancelled")
     assert has_element?(view, "#statistics-report-summary", "Refunded")

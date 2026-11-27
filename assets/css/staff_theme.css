@@ -9,8 +9,10 @@
   --color-error: oklch(.577 .245 27.325);
   --staff-popover-color: var(--color-base-100);
   --staff-sidebar-surface: var(--color-base-100);
+  --staff-panel-surface: var(--staff-sidebar-surface);
+  --staff-workspace-surface: oklch(.985 .003 247.858);
 
-  background-color: var(--color-base-100);
+  background-color: var(--staff-workspace-surface);
 }
 
 [data-theme="dark"] .foundation-shell {
@@ -23,4 +25,30 @@
   --color-error: oklch(.704 .191 22.216);
   --staff-popover-color: oklch(.208 .042 265.755);
   --staff-sidebar-surface: oklch(.14 .04 259.21);
+  --staff-workspace-surface: oklch(.105 .03 264.695);
+}
+
+.foundation-shell :is(.card.bg-base-100, .modal-box.bg-base-100, .card:not([class*="bg-"]), .modal-box:not([class*="bg-"])) {
+  background-color: var(--staff-panel-surface);
+}
+
+[data-theme="dark"] .foundation-shell .btn-primary:not(.btn-outline):not(:disabled):not(.btn-disabled) {
+  background-color: #fff;
+  border-color: transparent;
+  color: #000;
+  box-shadow: none;
+}
+
+[data-theme="dark"] .foundation-shell .btn-primary:not(.btn-outline):not(:disabled):not(.btn-disabled):hover {
+  background-color: oklch(.929 .013 255.508);
+}
+
+.foundation-shell .btn-outline:not(:disabled):not(.btn-disabled):not(.btn-error):not(.btn-info):not(.btn-success):not(.btn-warning) {
+  background-color: var(--staff-panel-surface);
+  border: 1px solid var(--color-base-300);
+  box-shadow: none;
+}
+
+.foundation-shell .btn-outline:not(:disabled):not(.btn-disabled):not(.btn-error):not(.btn-info):not(.btn-success):not(.btn-warning):hover {
+  background-color: var(--color-base-200);
 }

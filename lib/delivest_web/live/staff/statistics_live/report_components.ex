@@ -459,7 +459,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportComponents do
         id="statistics-report-summary"
         class="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6"
       >
-        <.stat_card :for={{label, value} <- summary_metrics(@report)} label={label}>
+        <.stat_card :for={{label, value, icon} <- summary_metrics(@report)} label={label} icon={icon}>
           {value}
         </.stat_card>
       </div>
@@ -759,12 +759,13 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportComponents do
 
   defp summary_metrics(report) do
     [
-      {gettext("Created"), report_total(report, "created")},
-      {gettext("Completed"), report_total(report, "completed")},
-      {gettext("Cancelled"), report_total(report, "cancelled")},
-      {gettext("Net revenue"), report_money(report, "revenue")},
-      {gettext("Refunded"), report_money(report, "refunded")},
-      {gettext("Average check"), average_check(report.totals, report.state)}
+      {gettext("Created"), report_total(report, "created"), "hero-plus-circle"},
+      {gettext("Completed"), report_total(report, "completed"), "hero-check-circle"},
+      {gettext("Cancelled"), report_total(report, "cancelled"), "hero-x-circle"},
+      {gettext("Net revenue"), report_money(report, "revenue"), "hero-banknotes"},
+      {gettext("Refunded"), report_money(report, "refunded"), "hero-arrow-uturn-left"},
+      {gettext("Average check"), average_check(report.totals, report.state),
+       "hero-receipt-percent"}
     ]
   end
 

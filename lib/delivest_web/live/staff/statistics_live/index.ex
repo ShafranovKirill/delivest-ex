@@ -1227,7 +1227,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-3">
+    <div class="statistics-surface space-y-4">
       <nav
         :if={@section in ~w(sources funnel)}
         id="sources-advertising-tabs"

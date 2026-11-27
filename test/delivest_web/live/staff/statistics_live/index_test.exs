@@ -43,6 +43,18 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
 
     refute has_element?(lv, "#statistics-sales-tabs")
     assert has_element?(lv, "#statistics-chart-revenue")
+
+    assert has_element?(
+             lv,
+             "#statistics-sales-detail .statistics-metric-card .statistics-metric-label"
+           )
+
+    assert has_element?(
+             lv,
+             "#statistics-sales-detail .statistics-metric-card .statistics-metric-icon"
+           )
+
+    assert has_element?(lv, "#statistics-chart-revenue.statistics-panel")
     assert has_element?(lv, "#statistics-chart-orders")
     assert has_element?(lv, "#statistics-chart-avg_check")
     assert has_element?(lv, "#statistics-chart-revenue-plot[data-chart]")

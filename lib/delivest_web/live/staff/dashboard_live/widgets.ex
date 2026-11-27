@@ -340,9 +340,9 @@ defmodule DelivestWeb.Staff.DashboardLive.Widgets do
   defp dashboard_kpi(assigns) do
     ~H"""
     <section class="dashboard-widget-card dashboard-kpi-card">
-      <div class="flex items-center gap-2 text-sm text-base-content/65">
-        <.icon name={@icon} class="size-4 text-primary" />
+      <div class="dashboard-kpi-heading">
         <span>{@label}</span>
+        <.icon name={@icon} class="dashboard-kpi-icon size-4" />
       </div>
       <p class="dashboard-kpi-value">
         {render_slot(@inner_block)}
@@ -364,7 +364,7 @@ defmodule DelivestWeb.Staff.DashboardLive.Widgets do
             "font-medium tabular-nums"
           ]}
         >{if @change > 0, do: "+"}{if @money, do: OrderHelpers.money(@change), else: @change}</span>
-        <span :if={@hint} class="ml-1">{@hint}</span>
+        <span :if={@hint} class="dashboard-kpi-hint">{@hint}</span>
       </p>
     </section>
     """

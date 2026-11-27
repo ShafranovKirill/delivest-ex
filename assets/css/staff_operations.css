@@ -503,3 +503,32 @@ html:has(#pos) {
   border-color: color-mix(in srgb, var(--color-error) 30%, var(--color-base-300));
   background: color-mix(in srgb, var(--color-error) 10%, var(--color-base-100));
 }
+
+.statistics-metric-card {
+  height: 100%;
+  background: var(--staff-panel-surface, var(--color-base-100));
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--color-base-content) 4%, transparent);
+}
+
+.statistics-metric-label,
+.statistics-metric-icon,
+.statistics-metric-detail {
+  color: color-mix(in srgb, var(--color-base-content) 60%, transparent);
+}
+
+.statistics-metric-value {
+  line-height: 1.2;
+}
+
+.statistics-surface :is(section, div).bg-base-100.border-base-300,
+.statistics-surface .statistics-panel {
+  border-radius: .75rem;
+  background: var(--staff-panel-surface, var(--color-base-100));
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--color-base-content) 4%, transparent);
+}
+
+.statistics-surface :is(#statistics-top-products, #statistics-top-categories, #statistics-fulfillment,
+  #statistics-payment, #statistics-order-source, #statistics-transfer-destination) > div + div {
+  padding-top: .5rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-base-content) 9%, transparent);
+}
