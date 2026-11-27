@@ -8,7 +8,7 @@ defmodule DelivestWeb.Staff.SubsectionNavigation do
 
   def subsection_navigation(assigns) do
     ~H"""
-    <ul :if={@sidebar} id={@id} phx-hook="ActiveSectionNav" aria-label={@label}>
+    <ul :if={@sidebar && @entries != []} id={@id} phx-hook="ActiveSectionNav" aria-label={@label}>
       <li :for={entry <- @entries}>
         <.link
           id={entry.id}
@@ -19,11 +19,11 @@ defmodule DelivestWeb.Staff.SubsectionNavigation do
       </li>
     </ul>
     <nav
-      :if={!@sidebar}
+      :if={!@sidebar && @entries != []}
       id={@id}
       phx-hook="ActiveSectionNav"
       aria-label={@label}
-      class="tabs tabs-box rounded-none max-w-full flex-nowrap overflow-x-auto whitespace-nowrap"
+      class="staff-subsection-tabs tabs tabs-box rounded-none max-w-full flex-nowrap overflow-x-auto whitespace-nowrap"
     >
       <.link
         :for={entry <- @entries}

@@ -23,6 +23,41 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
     init_test_session(conn, session)
   end
 
+  test "orders section links keep the branch and mark the current page", %{conn: conn} do
+    branch = insert(:branch)
+    admin_conn = login(conn, ["admin"], [branch], branch.id)
+
+    {:ok, orders, _} = live(admin_conn, ~p"/staff/b/#{branch}/orders")
+
+    assert has_element?(
+             orders,
+             "#staff-context-navigation #section-nav-orders[href='/staff/b/#{branch.slug}/orders'][aria-current='page']"
+           )
+
+    assert has_element?(
+             orders,
+             "#staff-context-navigation #section-nav-orders_new[href='/staff/b/#{branch.slug}/orders/new']"
+           )
+
+    {:ok, new_order, _} = live(admin_conn, ~p"/staff/b/#{branch}/orders/new")
+
+    assert has_element?(
+             new_order,
+             "#staff-context-navigation #section-nav-orders_new[aria-current='page']"
+           )
+
+    {:ok, reader, _} =
+      live(
+        login(build_conn(), ["orders.read"], [branch], branch.id),
+        ~p"/staff/b/#{branch}/orders"
+      )
+
+    refute has_element?(reader, "#staff-context-navigation #staff-section-navigation")
+    assert has_element?(reader, "#main-sidebar a[href='/staff/b/#{branch.slug}/orders']")
+    refute has_element?(reader, "#main-sidebar a[href='/staff/b/#{branch.slug}/orders/new']")
+    refute has_element?(reader, "#main-sidebar a[href='/staff/b/#{branch.slug}/pos']")
+  end
+
   test "VK pixel integration uses the selected branch route" do
     branch = insert(:branch)
     staff = insert(:staff, role: insert(:role, permissions: ["integrations.read"]))

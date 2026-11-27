@@ -73,6 +73,10 @@ article:has(> .order-card-header .order-card-printer[open]) {
   padding: 0;
 }
 
+.staff-shell-content:has(#orders-page):has(#staff-context-navigation #staff-section-navigation a) {
+  --orders-filter-top: calc(var(--staff-header-height) + var(--staff-subsection-height) + 1px);
+}
+
 #orders-page:fullscreen {
   width: 100vw;
   height: 100dvh;
@@ -91,7 +95,7 @@ article:has(> .order-card-header .order-card-printer[open]) {
 
 #orders-filters {
   position: sticky;
-  top: var(--staff-header-height);
+  top: var(--orders-filter-top, var(--staff-header-height));
   z-index: 25;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(7rem, 10rem) minmax(8rem, 11rem) auto auto auto;
@@ -138,8 +142,12 @@ article:has(> .order-card-header .order-card-printer[open]) {
   top: calc(100% + .5rem);
   right: 0;
   width: min(22rem, calc(100vw - 1rem));
-  max-height: calc(100dvh - var(--staff-header-height) - 4rem);
+  max-height: calc(100dvh - var(--orders-filter-top, var(--staff-header-height)) - 4rem);
   overflow-y: auto;
+}
+
+#orders-page:fullscreen .orders-filter-panel {
+  max-height: calc(100dvh - 4rem);
 }
 
 #orders-filters .orders-status-icon {

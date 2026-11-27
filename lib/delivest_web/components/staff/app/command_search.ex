@@ -31,10 +31,29 @@ defmodule DelivestWeb.CommandSearch do
   defp group(id, label, items), do: %{id: id, label: label, items: items}
 
   defp pages(staff, branch, query) do
+    section_labels =
+      staff
+      |> DelivestWeb.StaffNav.entries(branch)
+      |> Enum.flat_map(& &1.entries)
+      |> Enum.flat_map(fn
+        %{kind: :group, label: label, items: items} ->
+          Enum.map(items, &{&1.id, label})
+
+        _ ->
+          []
+      end)
+      |> Map.new()
+
     staff
     |> DelivestWeb.StaffNav.pages(branch)
     |> Enum.filter(fn page -> Enum.any?([page.label | page.aliases], &matches?(&1, query)) end)
-    |> Enum.map(&item("page-#{&1.page}", &1.label, nil, &1.icon, &1.path))
+    |> Enum.map(fn page ->
+      section =
+        Map.get(section_labels, page.id) ||
+          if(page.page_type == :settings, do: gettext("Settings"))
+
+      item("page-#{page.page}", page.label, section, page.icon, page.path)
+    end)
   end
 
   defp orders(staff, branch, query) do

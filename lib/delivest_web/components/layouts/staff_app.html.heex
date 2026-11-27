@@ -82,7 +82,6 @@
     <div id="staff-context-navigation" data-branch-chooser-nav={chooser_path && "true"}>
       <DelivestWeb.Staff.SettingsComponents.settings_navigation
         :if={DelivestWeb.StaffNav.active_setting(section_path)}
-        variant={:sidebar}
         staff={@current_staff}
         branches={branches}
         selected={section_branch && section_branch.id}

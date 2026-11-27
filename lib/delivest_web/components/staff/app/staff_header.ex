@@ -43,7 +43,7 @@ defmodule DelivestWeb.StaffHeader do
           <.icon name="panel-left" class="size-5" />
         </button>
       </div>
-      <div class="flex w-56 max-w-[55vw] shrink-0 items-center">
+      <div class="flex w-56 max-w-[55vw] min-w-0 shrink-0 items-center">
         <DelivestWeb.BranchSwitcher.branch_switcher
           current_branch={@scope_branch}
           branches={@staff_branches}
@@ -62,7 +62,7 @@ defmodule DelivestWeb.StaffHeader do
         />
       </div>
       <div class="ml-auto flex shrink-0 items-center gap-2">
-        <DelivestWeb.CommandPalette.command_palette_trigger icon_only />
+        <DelivestWeb.CommandPalette.command_palette_trigger />
         <DelivestWeb.KitchenControl.kitchen_indicator
           :if={working_context?(@current_path)}
           status={@kitchen_status}
