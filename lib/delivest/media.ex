@@ -17,7 +17,14 @@ defmodule Delivest.Media do
   @spec generate_public_url(String.t(), String.t()) :: {:ok, String.t()}
   def generate_public_url(bucket, key) do
     public_config = get_public_config()
-    port = if public_config.port in [nil, ""], do: "", else: ":#{public_config.port}"
+
+    default_port =
+      (public_config.scheme == "https://" and public_config.port == 443) or
+        (public_config.scheme == "http://" and public_config.port == 80)
+
+    port =
+      if public_config.port in [nil, ""] or default_port, do: "", else: ":#{public_config.port}"
+
     url = "#{public_config.scheme}#{public_config.host}#{port}/#{bucket}/#{key}"
 
     {:ok, url}
@@ -121,13 +128,18 @@ defmodule Delivest.Media do
     host = media_conf[:public_host] || config.host
 
     port =
-      case media_conf[:public_port] do
-        nil -> config.port
-        p when is_binary(p) -> String.to_integer(p)
-        p -> p
-      end
+      if Keyword.has_key?(media_conf, :public_port),
+        do: media_conf[:public_port],
+        else: config.port
 
-    %{config | host: host, port: port}
+    scheme = media_conf[:public_scheme] || config.scheme
+
+    port =
+      if (scheme == "https://" and port == 443) or (scheme == "http://" and port == 80),
+        do: nil,
+        else: port
+
+    %{config | scheme: scheme, host: host, port: port}
   end
 
   @spec create_file(map()) :: {:ok, File.t()} | {:error, Ecto.Changeset.t()}

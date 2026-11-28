@@ -777,7 +777,7 @@ defmodule Delivest.Payments.Online do
 
   defp return_url(order) do
     slug = Repo.one(from(b in Branch, where: b.id == ^order.branch_id, select: b.slug))
-    Application.fetch_env!(:delivest, :client_origin) <> "/#{slug}?order=" <> order.id
+    Delivest.PublicSite.primary_url() <> "/#{slug}?order=" <> order.id
   end
 
   defp pending(order_id) do

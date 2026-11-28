@@ -12,8 +12,14 @@ defmodule DelivestWeb.Endpoint do
   ]
 
   socket("/live", Phoenix.LiveView.Socket,
-    websocket: [connect_info: [session: @session_options]],
-    longpoll: [connect_info: [session: @session_options]]
+    websocket: [
+      connect_info: [session: @session_options],
+      check_origin: {__MODULE__, :allowed_socket_origin?, []}
+    ],
+    longpoll: [
+      connect_info: [session: @session_options],
+      check_origin: {__MODULE__, :allowed_socket_origin?, []}
+    ]
   )
 
   socket("/socket", DelivestWeb.ClientSocket,
@@ -38,12 +44,19 @@ defmodule DelivestWeb.Endpoint do
   def fetch_cors_origin(%Plug.Conn{path_info: ["integrations" | _]}), do: ["*"]
 
   def fetch_cors_origin(_conn) do
-    Application.get_env(:cors_plug, :origin, ["http://localhost:3000"])
+    if Application.get_env(:delivest, :public_site_config_path),
+      do: Delivest.PublicSite.origins(),
+      else: Application.get_env(:cors_plug, :origin, ["http://localhost:3000"])
   end
 
   def allowed_socket_origin?(%URI{} = uri) do
     origin = URI.to_string(%URI{scheme: uri.scheme, host: uri.host, port: uri.port})
-    origin in fetch_cors_origin(nil) or uri.host == URI.parse(url()).host
+    api_uri = URI.parse(url())
+
+    api_origin =
+      URI.to_string(%URI{scheme: api_uri.scheme, host: api_uri.host, port: api_uri.port})
+
+    origin in fetch_cors_origin(nil) or origin == api_origin
   end
 
   # Serve at "/" the static files from "priv/static" directory.

@@ -34,7 +34,7 @@ defmodule Delivest.Push.Vapid do
   end
 
   defp subject do
-    case Application.get_env(:delivest, :client_origin) do
+    case Delivest.PublicSite.primary_url() do
       "https://" <> _host = origin -> origin
       _other -> "https://delivest.shafranov.tech"
     end

@@ -433,7 +433,7 @@ defmodule Delivest.Printing do
 
   defp qr_url(%{qr_kind: :menu}, branch_id) do
     with %{slug: slug} when is_binary(slug) <- branch_context(branch_id),
-         origin when is_binary(origin) <- Application.get_env(:delivest, :client_origin),
+         origin when is_binary(origin) <- Delivest.PublicSite.primary_url(),
          %URI{scheme: scheme, host: host} when scheme in ["http", "https"] and is_binary(host) <-
            URI.parse(origin) do
       String.trim_trailing(origin, "/") <> "/" <> URI.encode(slug)
