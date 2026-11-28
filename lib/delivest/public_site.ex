@@ -125,9 +125,8 @@ defmodule Delivest.PublicSite do
         result =
           try do
             with :ok <- File.chmod(temp, 0o600),
-                 :ok <- IO.binwrite(io, content),
-                 :ok <- :file.sync(io) do
-              :ok
+                 :ok <- IO.binwrite(io, content) do
+              :file.sync(io)
             end
           after
             File.close(io)
