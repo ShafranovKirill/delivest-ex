@@ -2,22 +2,16 @@ defmodule Delivest.PublicSiteTest do
   use ExUnit.Case, async: false
 
   alias Delivest.PublicSite
+  alias Delivest.PublicSiteCorsAdapter
   alias DelivestWeb.Endpoint
   alias DelivestWeb.Seo.SeoSite
-
-  defmodule CorsAdapter do
-    def put(config) do
-      send(self(), {:cors, config})
-      if Process.get(:fail_cors), do: {:error, :s3_down}, else: :ok
-    end
-  end
 
   setup do
     path = Path.join(System.tmp_dir!(), "public-site-#{System.unique_integer([:positive])}.json")
     old_path = Application.get_env(:delivest, :public_site_config_path)
     old_adapter = Application.get_env(:delivest, :public_site_cors_adapter)
     Application.put_env(:delivest, :public_site_config_path, path)
-    Application.put_env(:delivest, :public_site_cors_adapter, CorsAdapter)
+    Application.put_env(:delivest, :public_site_cors_adapter, PublicSiteCorsAdapter)
 
     on_exit(fn ->
       Application.put_env(:delivest, :public_site_config_path, old_path)

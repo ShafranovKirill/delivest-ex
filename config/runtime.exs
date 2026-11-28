@@ -134,8 +134,12 @@ if config_env() == :prod do
 
   s3_scheme = System.get_env("S3_SCHEME", "https://")
 
+  internal_port =
+    System.get_env("S3_PORT_EXTERNAL") ||
+      if(s3_scheme == "http://", do: System.get_env("S3_PORT"), else: nil)
+
   s3_port =
-    case System.get_env("S3_PORT_EXTERNAL") || System.get_env("S3_PORT") do
+    case internal_port do
       nil -> nil
       "" -> nil
       port_str -> String.to_integer(port_str)

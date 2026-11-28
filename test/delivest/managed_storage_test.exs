@@ -2,39 +2,8 @@ defmodule Delivest.ManagedStorageTest do
   use ExUnit.Case, async: false
 
   alias Delivest.ManagedStorage
-
-  defmodule HttpProbe do
-    def request(options) do
-      url = Keyword.fetch!(options, :url)
-      method = Keyword.fetch!(options, :method)
-      uri = URI.parse(url)
-      send(self(), {:public_request, method, uri.host, uri.path, uri.query})
-
-      cond do
-        method == :put ->
-          {:ok, %{status: 200, body: ""}}
-
-        String.contains?(uri.path, "delivest-private") and is_nil(uri.query) ->
-          {:ok, %{status: 403, body: "denied"}}
-
-        String.contains?(uri.path, "delivest-private") ->
-          {:ok, %{status: 200, body: "delivest-storage-probe"}}
-
-        true ->
-          {:ok, %{status: 200, body: "delivest-public-upload-probe"}}
-      end
-    end
-  end
-
-  defmodule BadHttpProbe do
-    def request(options) do
-      url = URI.parse(Keyword.fetch!(options, :url))
-
-      if String.contains?(url.path, "delivest-private") and is_nil(url.query),
-        do: {:ok, %{status: 403, body: "denied"}},
-        else: {:ok, %{status: 200, body: "wrong data"}}
-    end
-  end
+  alias Delivest.ManagedStorageHttpProbe
+  alias Delivest.ManagedStorageBadHttpProbe
 
   setup do
     old_media = Application.get_env(:delivest, Delivest.Media)
@@ -49,7 +18,7 @@ defmodule Delivest.ManagedStorageTest do
       |> Keyword.put(:public_port, 443)
     )
 
-    Application.put_env(:delivest, :managed_storage_http_adapter, HttpProbe)
+    Application.put_env(:delivest, :managed_storage_http_adapter, ManagedStorageHttpProbe)
 
     Req.Test.stub(Delivest.S3Stub, fn conn -> Plug.Conn.send_resp(conn, 200, "") end)
 
@@ -74,7 +43,7 @@ defmodule Delivest.ManagedStorageTest do
   end
 
   test "matching HTTP status with wrong object body fails readiness" do
-    Application.put_env(:delivest, :managed_storage_http_adapter, BadHttpProbe)
+    Application.put_env(:delivest, :managed_storage_http_adapter, ManagedStorageBadHttpProbe)
     assert_raise RuntimeError, ~r/public media check failed/, &ManagedStorage.run!/0
   end
 
