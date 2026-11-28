@@ -26,6 +26,8 @@ config :delivest,
 # script that automatically sets the env var above.
 
 config :delivest, :version, System.get_env("APP_VERSION") || "dev"
+config :delivest, :env, config_env()
+config :delivest, :public_site_config_path, System.get_env("DELIVEST_PUBLIC_CONFIG_PATH")
 
 backup_dir =
   case System.get_env("INSTANCE_BACKUP_DIR") do
@@ -133,16 +135,19 @@ if config_env() == :prod do
   s3_scheme = System.get_env("S3_SCHEME", "https://")
 
   s3_port =
-    case s3_scheme do
-      "https://" ->
-        nil
+    case System.get_env("S3_PORT_EXTERNAL") || System.get_env("S3_PORT") do
+      nil -> nil
+      "" -> nil
+      port_str -> String.to_integer(port_str)
+    end
 
-      _ ->
-        case System.get_env("S3_PORT_EXTERNAL") do
-          nil -> nil
-          "" -> nil
-          port_str -> String.to_integer(port_str)
-        end
+  public_scheme = System.get_env("S3_PUBLIC_SCHEME") || s3_scheme
+
+  public_port =
+    case System.get_env("S3_PUBLIC_PORT") do
+      nil -> if(public_scheme == s3_scheme, do: s3_port, else: nil)
+      "" -> nil
+      port_str -> String.to_integer(port_str)
     end
 
   config :ex_aws,
@@ -158,7 +163,8 @@ if config_env() == :prod do
     private_bucket: System.get_env("S3_PRIVATE_BUCKET", "delivest-private"),
     public_bucket: System.get_env("S3_BUCKET", "delivest"),
     public_host: System.get_env("S3_PUBLIC_HOST", "delivest-s3.shafranov.tech"),
-    public_port: s3_port
+    public_scheme: public_scheme,
+    public_port: public_port
 
   # ## SSL Support
   #

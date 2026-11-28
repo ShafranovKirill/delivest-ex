@@ -8,22 +8,33 @@ defmodule DelivestWeb.Helpers.CookieHelper do
 
   def put_cookie(conn, key, value, overrides \\ []) do
     string_value = to_string(value)
-    opts = build_options(overrides)
+    opts = build_options(key, overrides)
     put_resp_cookie(conn, to_string(key), string_value, opts)
   end
 
   def delete_cookie(conn, key, overrides \\ []) do
-    opts = build_options(overrides)
+    opts = build_options(key, overrides)
     delete_resp_cookie(conn, to_string(key), opts)
   end
 
-  defp build_options(overrides) do
+  defp build_options(key, overrides) do
     default_env_options()
     |> Keyword.merge(overrides)
+    |> managed_client_cookie(key)
+  end
+
+  defp managed_client_cookie(options, key) do
+    if key in ["session_id", "active_branch_id"] and
+         is_binary(Application.get_env(:delivest, :public_site_config_path)) and
+         environment() == :prod do
+      options |> Keyword.put(:same_site, "None") |> Keyword.put(:secure, true)
+    else
+      options
+    end
   end
 
   defp default_env_options do
-    env = Application.get_env(:delivest, :environment, :dev)
+    env = environment()
 
     if env in [:dev, :test] do
       [
@@ -42,5 +53,9 @@ defmodule DelivestWeb.Helpers.CookieHelper do
         http_only: true
       ]
     end
+  end
+
+  defp environment do
+    Application.get_env(:delivest, :environment) || Application.get_env(:delivest, :env, :dev)
   end
 end

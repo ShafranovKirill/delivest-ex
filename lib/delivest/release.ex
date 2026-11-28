@@ -192,6 +192,67 @@ defmodule Delivest.Release do
     create_admin()
   end
 
+  @doc "Strict, repeatable initialization for an isolated managed installation."
+  def setup_managed do
+    password = System.get_env("ADMIN_PASSWORD")
+
+    if not is_binary(password) or byte_size(password) < 24,
+      do: raise("managed admin password is missing")
+
+    migrate()
+    managed_storage_setup!()
+    {:ok, :ok, _} = seed_roles()
+    {:ok, {:ok, _admin}, _} = create_admin(System.get_env("ADMIN_LOGIN") || "admin123", password)
+    :ok
+  end
+
+  def check_managed_storage do
+    result = Delivest.ManagedStorage.check!()
+    IO.puts(Jason.encode!(result))
+  end
+
+  defp managed_storage_setup! do
+    Application.ensure_all_started(:ex_aws)
+
+    for bucket <- Enum.uniq([Delivest.Media.public_bucket(), Delivest.Media.private_bucket()]) do
+      case ExAws.S3.put_bucket(bucket, "") |> ExAws.request() do
+        {:ok, _} ->
+          :ok
+
+        {:error, reason} ->
+          if not String.contains?(inspect(reason), "BucketAlreadyOwnedByYou") and
+               not String.contains?(inspect(reason), "BucketAlreadyExists") and
+               not String.contains?(inspect(reason), "409"),
+             do: raise("managed bucket creation failed")
+      end
+    end
+
+    bucket = Delivest.Media.public_bucket()
+
+    policy = %{
+      "Version" => "2012-10-17",
+      "Statement" => [
+        %{
+          "Sid" => "PublicReadGetObject",
+          "Effect" => "Allow",
+          "Principal" => "*",
+          "Action" => ["s3:GetObject"],
+          "Resource" => ["arn:aws:s3:::#{bucket}/*"]
+        }
+      ]
+    }
+
+    case ExAws.S3.put_bucket_policy(bucket, Jason.encode!(policy)) |> ExAws.request() do
+      {:ok, _} -> :ok
+      _ -> raise("managed public bucket policy failed")
+    end
+
+    case Delivest.PublicSite.put(Delivest.PublicSite.current()) do
+      :ok -> :ok
+      _ -> raise("managed bucket CORS failed")
+    end
+  end
+
   defp generate_admin_password do
     random = :crypto.strong_rand_bytes(18) |> Base.url_encode64(padding: false)
     "Aa1!" <> random

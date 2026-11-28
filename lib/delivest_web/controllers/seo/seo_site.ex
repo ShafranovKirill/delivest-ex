@@ -89,5 +89,5 @@ defmodule DelivestWeb.Seo.SeoSite do
     ])
   end
 
-  def origin, do: Application.get_env(:delivest, :client_origin, "http://localhost:3000")
+  def origin, do: Delivest.PublicSite.primary_url()
 end
